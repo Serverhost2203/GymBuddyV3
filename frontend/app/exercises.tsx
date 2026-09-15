@@ -1,4 +1,5 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { Image } from "expo-image";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { CaretLeft, FunnelSimple, MagnifyingGlass, X } from "phosphor-react-native";
 import { useState } from "react";
@@ -92,7 +93,11 @@ export default function Exercises() {
           ListEmptyComponent={<EmptyState title={t.exercises.noResults} testID="ex-empty" />}
           renderItem={({ item }) => (
             <Pressable style={[s.card, !item.available && s.cardDisabled]} onPress={() => onPick(item)} testID={`exercise-${item.id}`}>
-              <View style={s.figWrap}><MuscleFigure primary={item.primary_muscle} secondary={item.secondary_muscles} width={40} /></View>
+              {item.photos?.length ? (
+            <Image source={{ uri: item.photos[0] }} style={s.thumb} contentFit="cover" transition={150} />
+          ) : (
+            <View style={s.figWrap}><MuscleFigure primary={item.primary_muscle} secondary={item.secondary_muscles} width={40} /></View>
+          )}
               <View style={{ flex: 1 }}>
                 <Body style={{ fontWeight: "700" }} numberOfLines={1}>{item.name}</Body>
                 <Body muted size={font.sm} numberOfLines={1}>{item.primary_muscle_label} · {item.difficulty_label}</Body>
@@ -144,6 +149,7 @@ const useStyles = makeStyles((c) => ({
   card: { flexDirection: "row", alignItems: "center", gap: spacing.md, backgroundColor: c.surfaceSecondary, borderRadius: radius.md, padding: spacing.md, borderWidth: 1, borderColor: c.border },
   cardDisabled: { opacity: 0.55 },
   figWrap: { width: 44, height: 90, alignItems: "center", justifyContent: "center", overflow: "hidden" },
+  thumb: { width: 56, height: 56, borderRadius: radius.sm, backgroundColor: c.surfaceTertiary },
   eqRow: { flexDirection: "row", gap: spacing.xs, marginTop: 4 },
   eqTag: { backgroundColor: c.surfaceTertiary, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: 2 },
   eqText: { color: c.onSurfaceTertiary, fontFamily: font.text, fontSize: 11 },

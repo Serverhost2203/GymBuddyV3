@@ -26,6 +26,12 @@ Build a complete, production-ready Android fitness app "GymBuddy" (React Native/
 
 ## Implemented (2026-06)
 
+### Update 4 — Real exercise photos
+- REAL execution PHOTOS from Free Exercise DB (public domain, jsDelivr CDN). 721/1306 exercises matched confidently by normalized name + primary-muscle compatibility. Map in `/app/backend/exercise_media.py` (id -> {images:[start,end]}). Backend adds `photos`/`photo_attribution` to `localize_exercise`.
+- Exercise detail: new "Execution" card auto-cycles start/end photos (GIF-like), tap to toggle manually, dots indicator; SVG muscle diagram + legend retained below as fallback for the ~585 unmatched exercises.
+- Exercise browser list: real photo thumbnail when available, else the SVG muscle figure.
+- Videos NOT included (Free DB is photos-only). True video/GIF would need a paid ExerciseDB/RapidAPI key.
+
 ### Update 3 — Comment moderation
 - Comments can be EDITED and DELETED: users manage their own comments; admins can edit/delete ANY comment on ANY post (backend enforces owner-or-admin, 403 otherwise). Edited comments show an "edited" marker. Web uses confirm dialog, native uses Alert.
 

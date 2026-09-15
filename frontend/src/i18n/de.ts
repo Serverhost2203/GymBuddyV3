@@ -61,6 +61,7 @@ export const de: Dict = {
     alternatives: "Alternativen", personalBest: "Bestleistung", history: "Verlauf",
     noHistory: "Noch kein Verlauf. Logge deinen ersten Satz.", notAvailable: "Benötigt Equipment, das du nicht hast",
     front: "Vorne", back: "Hinten", results: "Ergebnisse", noResults: "Keine Übungen passen zu deinen Filtern",
+    photos: "Ausführung", startPos: "Start", endPos: "Ende", photoDemo: "Tippe, um Start-/Endposition zu wechseln", photoSource: "Fotos: Free Exercise DB (gemeinfrei)",
   },
   plans: {
     title: "Pläne", templates: "Vorlagen", myPlans: "Meine Pläne", generate: "Auto-Generieren",

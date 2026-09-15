@@ -59,6 +59,7 @@ export const en = {
     alternatives: "Alternatives", personalBest: "Personal best", history: "History",
     noHistory: "No history yet. Log your first set.", notAvailable: "Needs equipment you don't have",
     front: "Front", back: "Back", results: "results", noResults: "No exercises match your filters",
+    photos: "Execution", startPos: "Start", endPos: "End", photoDemo: "Tap to toggle start/end position", photoSource: "Photos: Free Exercise DB (public domain)",
   },
   plans: {
     title: "Plans", templates: "Templates", myPlans: "My Plans", generate: "Auto-Generate",

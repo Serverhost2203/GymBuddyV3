@@ -23,6 +23,7 @@ from exercise_data import (
     EXERCISES, MUSCLES, EQUIPMENT, DIFFICULTY, CATEGORY, TYPE, PATTERN, LANGS,
 )
 from templates_data import TEMPLATES, GOALS, EXPERIENCE
+from exercise_media import EXERCISE_MEDIA
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -126,6 +127,7 @@ def exercise_available(ex: dict, owned: set) -> bool:
 def localize_exercise(ex: dict, lang: str) -> dict:
     lang = lang if lang in LANGS else "en"
     loc = ex.get("localized", {}).get(lang, {})
+    media = EXERCISE_MEDIA.get(ex["id"])
     return {
         "id": ex["id"],
         "name": ex["localized_names"].get(lang, ex["name"]),
@@ -153,6 +155,8 @@ def localize_exercise(ex: dict, lang: str) -> dict:
         "common_mistakes": loc.get("common_mistakes", []),
         "has_image": ex.get("has_image", True),
         "has_animation": ex.get("has_animation", False),
+        "photos": media["images"] if media else [],
+        "photo_attribution": "Free Exercise DB (public domain)" if media else "",
         "media_attribution": ex.get("media_attribution", ""),
         "alternatives": ex.get("alternatives", []),
         "easier_variation": ex.get("easier_variation"),

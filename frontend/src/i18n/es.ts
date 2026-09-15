@@ -61,6 +61,7 @@ export const es: Dict = {
     alternatives: "Alternativas", personalBest: "Mejor marca", history: "Historial",
     noHistory: "Sin historial. Registra tu primera serie.", notAvailable: "Requiere equipo que no tienes",
     front: "Frente", back: "Espalda", results: "resultados", noResults: "Ningún ejercicio coincide con tus filtros",
+    photos: "Ejecución", startPos: "Inicio", endPos: "Fin", photoDemo: "Toca para cambiar entre inicio/fin", photoSource: "Fotos: Free Exercise DB (dominio público)",
   },
   plans: {
     title: "Planes", templates: "Plantillas", myPlans: "Mis planes", generate: "Auto-generar",

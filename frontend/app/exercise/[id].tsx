@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
+import { Image } from "expo-image";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { CaretLeft } from "phosphor-react-native";
-import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "@/src/api";
@@ -19,9 +20,18 @@ export default function ExerciseDetail() {
   const s = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
   const [view, setView] = useState<"front" | "back">("front");
+  const [frame, setFrame] = useState(0);
+  const [autoplay, setAutoplay] = useState(true);
 
   const q = useQuery({ queryKey: ["exercise", id, lang], queryFn: () => api.get(`/exercises/${id}`, { lang }) });
   const ex = q.data;
+  const photos: string[] = ex?.photos ?? [];
+
+  useEffect(() => {
+    if (!autoplay || photos.length < 2) return;
+    const iv = setInterval(() => setFrame((f) => (f + 1) % photos.length), 900);
+    return () => clearInterval(iv);
+  }, [autoplay, photos.length]);
 
   const Section = ({ title, text }: { title: string; text?: string }) =>
     text ? (<View style={s.sec}><Text style={s.secTitle}>{title}</Text><Body muted>{text}</Body></View>) : null;
@@ -37,6 +47,32 @@ export default function ExerciseDetail() {
         <View style={{ padding: spacing.lg, gap: spacing.md }}><Skeleton height={300} /><Skeleton height={120} /></View>
       ) : (
         <ScrollView contentContainerStyle={[s.content, { paddingBottom: insets.bottom + spacing.xl }]} showsVerticalScrollIndicator={false}>
+          {/* Real execution photos (Free Exercise DB) */}
+          {photos.length ? (
+            <Card>
+              <Text style={s.secTitle}>{t.exercises.photos}</Text>
+              <Pressable
+                style={s.photoWrap}
+                onPress={() => { setAutoplay(false); setFrame((f) => (f + 1) % photos.length); }}
+                testID="exercise-photo"
+              >
+                <Image source={{ uri: photos[frame] }} style={s.photo} contentFit="cover" transition={200} />
+                <View style={s.photoBadge}>
+                  <Text style={s.photoBadgeText}>{frame === 0 ? t.exercises.startPos : t.exercises.endPos}</Text>
+                </View>
+              </Pressable>
+              {photos.length > 1 ? (
+                <View style={s.dots}>
+                  {photos.map((_, i) => (
+                    <View key={i} style={[s.pdot, i === frame && { backgroundColor: colors.brandPrimary }]} />
+                  ))}
+                </View>
+              ) : null}
+              <Body muted size={font.sm} style={{ marginTop: spacing.xs }}>{t.exercises.photoDemo}</Body>
+              <Body muted size={11} style={{ marginTop: 2 }}>{t.exercises.photoSource}</Body>
+            </Card>
+          ) : null}
+
           {/* Muscle diagram */}
           <Card>
             <Segmented value={view} onChange={(v) => setView(v as any)} testID="muscle-view"
@@ -117,6 +153,12 @@ const useStyles = makeStyles((c) => ({
   back: { paddingRight: spacing.xs },
   content: { padding: spacing.lg, gap: spacing.md },
   figRow: { alignItems: "center", paddingVertical: spacing.lg },
+  photoWrap: { marginTop: spacing.sm, borderRadius: radius.md, overflow: "hidden", backgroundColor: c.surfaceTertiary },
+  photo: { width: "100%", aspectRatio: 4 / 3 },
+  photoBadge: { position: "absolute", top: spacing.sm, left: spacing.sm, backgroundColor: c.brandPrimary, borderRadius: radius.pill, paddingHorizontal: spacing.md, paddingVertical: 4 },
+  photoBadgeText: { color: c.onBrandPrimary, fontFamily: font.text, fontWeight: "700", fontSize: font.sm },
+  dots: { flexDirection: "row", justifyContent: "center", gap: spacing.sm, marginTop: spacing.sm },
+  pdot: { width: 8, height: 8, borderRadius: 4, backgroundColor: c.border },
   legend: { gap: spacing.sm },
   legendItem: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   dot: { width: 12, height: 12, borderRadius: 6 },
