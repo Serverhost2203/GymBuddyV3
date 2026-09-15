@@ -1,0 +1,30 @@
+{
+  "summary": "Super-admin bug fix VERIFIED (backend only). 12/12 pytest cases pass in /app/backend/tests/test_root_admin_fix.py. (1) MongoDB: myscraptv@gmail.com now has role=admin, root_admin=true, deleted_at=null, and its own data/password preserved (name 'Jason Bauer (Head Admin)' proves bootstrap did NOT overwrite the account). (2) Exactly ONE user with root_admin=true exists and it is myscraptv@gmail.com. (3) New registration via POST /api/auth/register with another email yields role=user, root_admin=false (verified in API response AND Mongo). (4) Regular test admin admin@gymbuddy.app still accesses GET /api/admin/overview (200, is_root=false) after demotion enforcement — get_current_user reads fresh from DB. (5) Root protection: regular admin gets 403 when trying to demote, promote-over, or disable the root account via /api/admin/users/{uid}/role|disable; root state unchanged after attempts. (6) Restart safety: after 'sudo supervisorctl restart backend', bootstrap ran idempotently — still exactly one root (myscraptv@gmail.com), account data/password untouched, startup log clean. Re-registering root email correctly returns 409.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [],
+    "react_native_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_root_admin_fix.py", "/app/test_reports/pytest/pytest_root_admin.xml"],
+  "action_items": [
+    "Optional hardening: server.py:36-37 uses os.environ.get with fallback defaults for ROOT_ADMIN_EMAIL ('admin@gymbuddy.app') and ROOT_ADMIN_PASSWORD — if the env var were ever missing, admin@gymbuddy.app would silently become root on next startup. Remove defaults so missing config fails fast.",
+    "Optional: any regular admin can PROMOTE a user to admin (server.py:1122-1123 has no root check for 'promote', only 'demote' requires root). If only root should grant admin rights, add the same root_admin guard to promote."
+  ],
+  "critical_code_review_comments": [
+    "Bootstrap (server.py:1493-1511) is correct and idempotent: promotes existing ROOT_ADMIN_EMAIL account with $set role/root_admin/deleted_at only (no password_hash touch), and demotes all other root_admin users via update_many.",
+    "Role-change endpoint blocks ANY modification of a root_admin target (server.py:1120-1121) before action dispatch, and disable endpoint blocks root too (1138-1139). No admin delete-user endpoint exists; self-delete /users/me is out of admin scope.",
+    "server.py is now 1518 lines — still recommend splitting into routers (auth, admin, plans, sessions, food, social) for maintainability; not blocking."
+  ],
+  "updated_files": ["/app/backend/tests/test_root_admin_fix.py (new)"],
+  "success_rate": {"backend": "100%", "frontend": "n/a (backend-only task)"},
+  "seed_data_creation": "One ephemeral user test_<uuid>@test.de registered and deleted within the test. No other data created. Root account and test admin account untouched.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Root admin fix confirmed working. Root: myscraptv@gmail.com (root_admin=true, user's own password unknown — do NOT attempt login). Test admin: admin@gymbuddy.app / AdminGym2026! (regular admin, root_admin=false). Backend base: EXPO_PUBLIC_BACKEND_URL from /app/frontend/.env + /api. Mongo queryable via pymongo from /app/backend cwd (load .env for MONGO_URL/DB_NAME). Reusable regression suite: /app/backend/tests/test_root_admin_fix.py.",
+  "rca_of_issue": "Original bug: user registered with myscraptv@gmail.com while ROOT_ADMIN_EMAIL in .env still pointed to the old default admin@gymbuddy.app, so the registration-time check (server.py:271 email == ROOT_ADMIN_EMAIL) evaluated false and the account was created as role=user. Fix: (1) ROOT_ADMIN_EMAIL corrected to myscraptv@gmail.com in backend/.env; (2) startup bootstrap now promotes the EXISTING account with that email to role=admin/root_admin=true without touching password_hash; (3) update_many demotes every other root_admin on each startup, enforcing single-root invariant. Verified fixed end-to-end including restart idempotency."
+}

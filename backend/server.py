@@ -1506,6 +1506,9 @@ async def on_startup():
             "privacy": DEFAULT_PRIVACY, "leaderboard_optin": True, "subscription": "premium",
             "xp": 0, "level": 1, "streak": 0, "best_streak": 0, "achievements": [],
             "last_workout_date": None, "created_at": iso(now_utc()), "deleted_at": None})
+    # enforce: ONLY ROOT_ADMIN_EMAIL may hold root_admin (all others are demoted)
+    await db.users.update_many({"email": {"$ne": ROOT_ADMIN_EMAIL}, "root_admin": True},
+                               {"$set": {"root_admin": False}})
     logger.info("GymBuddy started with %d exercises", len(EXERCISES))
 
 

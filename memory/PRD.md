@@ -26,6 +26,9 @@ Build a complete, production-ready Android fitness app "GymBuddy" (React Native/
 
 ## Implemented (2026-06)
 
+### Update 6 — Super-admin fix
+- ROOT_ADMIN_EMAIL changed to `myscraptv@gmail.com`; startup bootstrap promotes that existing account (password preserved) and now ENFORCES on every startup that only this email holds `root_admin` (all others demoted). Registration auto-grants root for this email only. Old test admin `admin@gymbuddy.app` stays a regular (non-root) admin. Verified by testing_agent: 12/12 (single-root invariant, root protection vs regular admin, restart idempotency).
+
 ### Update 5 — Full photo coverage + Instagram-style Explore
 - Photo coverage now 100% (1306/1306): 721 exact name+muscle matches + 585 representative photos (same muscle group). Detail screen labels representative photos ("Beispielfoto für diese Muskelgruppe"). Map in `exercise_media.py` includes `match: exact|representative`; backend exposes `photo_match`.
 - New EXPLORE screen (`/app/frontend/app/explore.tsx`): Instagram-style 3-column photo grid of public image posts with like/comment counts; tapping a tile opens the post (like + comment). Search bar toggles to a People results list (remount via distinct FlatList keys to avoid numColumns crash). Feed search button now routes to /explore; old user-search modal removed. Backend `GET /explore` returns public image posts.
