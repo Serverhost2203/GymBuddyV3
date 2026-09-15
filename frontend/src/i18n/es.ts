@@ -143,6 +143,25 @@ export const es: Dict = {
     feature_advanced_generation: "Generación avanzada", feature_extended_history: "Historial ampliado",
     feature_custom_themes: "Temas personalizados", currentPlan: "Plan actual", note: "Sin pago en esta versión.",
   },
+  feed: {
+    title: "Feed", empty: "Aún no hay publicaciones. Sigue a atletas públicos o comparte lo tuyo.",
+    newPost: "Nueva publicación", whatsOnMind: "Comparte un logro, récord o consejo…", post: "Publicar",
+    like: "Me gusta", comment: "Comentario", comments: "Comentarios", addComment: "Añadir comentario…",
+    searchUsers: "Buscar atletas", publicProfile: "Perfil público", privateProfile: "Perfil privado",
+    profilePrivateNote: "Este perfil es privado.", record: "Récord personal", photo: "Foto",
+    viewProfile: "Ver perfil", workouts: "Entrenos", deletePost: "Eliminar publicación", makePublicHint: "Haz tu perfil público para aparecer en la búsqueda y el feed",
+    editComment: "Editar comentario", deleteComment: "Eliminar comentario", deleteCommentConfirm: "¿Eliminar este comentario?", edited: "editado",
+  },
+  gallery: {
+    title: "Galería", empty: "Aún no hay fotos.", add: "Añadir foto", public: "Público", private: "Privado",
+    makePublic: "Hacer público", makePrivate: "Hacer privado", caption: "Descripción", visibility: "Visibilidad",
+    deletePhoto: "Eliminar foto", publicNote: "Las fotos públicas aparecen en tu perfil y feed.",
+  },
+  reminders: {
+    title: "Recordatorios", workoutTime: "Recordatorio de entreno", weightTime: "Recordatorio de peso",
+    mealTime: "Recordatorio de comidas", permission: "Permite notificaciones para recibir recordatorios.",
+    enable: "Activar recordatorios", time: "Hora", scheduled: "Recordatorios programados",
+  },
   equipment: {},
   muscles: {},
 };

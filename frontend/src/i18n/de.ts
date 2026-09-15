@@ -143,6 +143,25 @@ export const de: Dict = {
     feature_advanced_generation: "Erweiterte Plan-Generierung", feature_extended_history: "Erweiterter Verlauf",
     feature_custom_themes: "Eigene Designs", currentPlan: "Aktuelles Abo", note: "In dieser Version ohne Zahlung.",
   },
+  feed: {
+    title: "Feed", empty: "Noch keine Beiträge. Folge öffentlichen Athleten oder teile deine Erfolge.",
+    newPost: "Neuer Beitrag", whatsOnMind: "Teile einen Erfolg, Rekord oder Tipp…", post: "Posten",
+    like: "Gefällt mir", comment: "Kommentar", comments: "Kommentare", addComment: "Kommentar hinzufügen…",
+    searchUsers: "Athleten suchen", publicProfile: "Öffentliches Profil", privateProfile: "Privates Profil",
+    profilePrivateNote: "Dieses Profil ist privat.", record: "Persönlicher Rekord", photo: "Foto",
+    viewProfile: "Profil ansehen", workouts: "Workouts", deletePost: "Beitrag löschen", makePublicHint: "Stelle dein Profil öffentlich, um in Suche & Feed zu erscheinen",
+    editComment: "Kommentar bearbeiten", deleteComment: "Kommentar löschen", deleteCommentConfirm: "Diesen Kommentar wirklich löschen?", edited: "bearbeitet",
+  },
+  gallery: {
+    title: "Galerie", empty: "Noch keine Fotos.", add: "Foto hinzufügen", public: "Öffentlich", private: "Privat",
+    makePublic: "Öffentlich machen", makePrivate: "Privat machen", caption: "Beschriftung", visibility: "Sichtbarkeit",
+    deletePhoto: "Foto löschen", publicNote: "Öffentliche Fotos erscheinen in Profil & Feed.",
+  },
+  reminders: {
+    title: "Erinnerungen", workoutTime: "Trainings-Erinnerung", weightTime: "Wiege-Erinnerung",
+    mealTime: "Essen-Tracking-Erinnerung", permission: "Erlaube Benachrichtigungen für Erinnerungen.",
+    enable: "Erinnerungen aktivieren", time: "Uhrzeit", scheduled: "Erinnerungen geplant",
+  },
   equipment: {},
   muscles: {},
 };

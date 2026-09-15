@@ -1223,6 +1223,233 @@ async def set_subscription(body: Dict[str, str], user: dict = Depends(get_curren
     return {"tier": tier}
 
 
+# --------------------------------------------------------------------------- #
+# Gallery (public/private progress photos)
+# --------------------------------------------------------------------------- #
+class GalleryIn(BaseModel):
+    image: str
+    caption: Optional[str] = ""
+    visibility: str = "private"
+
+
+class GalleryUpdate(BaseModel):
+    caption: Optional[str] = None
+    visibility: Optional[str] = None
+
+
+@api.post("/gallery")
+async def add_gallery(body: GalleryIn, user: dict = Depends(get_current_user)):
+    vis = "public" if body.visibility == "public" else "private"
+    g = {"id": str(uuid.uuid4()), "user_id": user["id"], "image": body.image,
+         "caption": (body.caption or "").strip(), "visibility": vis,
+         "created_at": iso(now_utc()), "deleted_at": None}
+    await db.gallery.insert_one(dict(g))
+    g.pop("_id", None)
+    return g
+
+
+@api.get("/gallery")
+async def list_gallery(user: dict = Depends(get_current_user)):
+    items = await db.gallery.find({"user_id": user["id"], "deleted_at": None}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return {"items": items}
+
+
+@api.patch("/gallery/{gid}")
+async def update_gallery(gid: str, body: GalleryUpdate, user: dict = Depends(get_current_user)):
+    upd = {}
+    if body.caption is not None:
+        upd["caption"] = body.caption.strip()
+    if body.visibility is not None:
+        upd["visibility"] = "public" if body.visibility == "public" else "private"
+    if upd:
+        await db.gallery.update_one({"id": gid, "user_id": user["id"]}, {"$set": upd})
+    return await db.gallery.find_one({"id": gid, "user_id": user["id"]}, {"_id": 0})
+
+
+@api.delete("/gallery/{gid}")
+async def delete_gallery(gid: str, user: dict = Depends(get_current_user)):
+    await db.gallery.update_one({"id": gid, "user_id": user["id"]}, {"$set": {"deleted_at": iso(now_utc())}})
+    return {"ok": True}
+
+
+# --------------------------------------------------------------------------- #
+# Social feed (public profiles only)
+# --------------------------------------------------------------------------- #
+class PostIn(BaseModel):
+    text: str = ""
+    image: Optional[str] = None
+    type: str = "text"  # text | photo | record
+    record: Optional[str] = None
+    visibility: str = "public"
+
+
+class CommentIn(BaseModel):
+    text: str = Field(min_length=1, max_length=500)
+
+
+async def _author_card(uid: str) -> dict:
+    u = await db.users.find_one({"id": uid}, {"_id": 0, "name": 1, "avatar": 1, "level": 1, "privacy": 1, "id": 1})
+    if not u:
+        return {"id": uid, "name": "Unknown", "avatar": None, "level": 1, "public": False}
+    return {"id": uid, "name": u.get("name"), "avatar": u.get("avatar"),
+            "level": u.get("level", 1), "public": bool((u.get("privacy") or {}).get("profile_public"))}
+
+
+def _post_public(p: dict, me: str, author: dict) -> dict:
+    return {"id": p["id"], "text": p.get("text", ""), "image": p.get("image"),
+            "type": p.get("type", "text"), "record": p.get("record"),
+            "created_at": p.get("created_at"), "author": author,
+            "likes": len(p.get("likes", [])), "liked": me in p.get("likes", []),
+            "comments": len(p.get("comments", []))}
+
+
+@api.post("/posts")
+async def create_post(body: PostIn, user: dict = Depends(get_current_user)):
+    p = {"id": str(uuid.uuid4()), "user_id": user["id"], "text": body.text.strip()[:1000],
+         "image": body.image, "type": body.type, "record": body.record,
+         "visibility": "public" if body.visibility == "public" else "private",
+         "likes": [], "comments": [], "created_at": iso(now_utc()), "deleted_at": None}
+    await db.posts.insert_one(dict(p))
+    return _post_public(p, user["id"], await _author_card(user["id"]))
+
+
+@api.get("/feed")
+async def feed(offset: int = 0, limit: int = 20, user: dict = Depends(get_current_user)):
+    # public posts only, and only from users with a public profile
+    public_ids = [u["id"] async for u in db.users.find({"privacy.profile_public": True, "deleted_at": None}, {"id": 1})]
+    cursor = db.posts.find({"visibility": "public", "deleted_at": None, "user_id": {"$in": public_ids}}, {"_id": 0}).sort("created_at", -1).skip(offset).limit(limit)
+    posts = await cursor.to_list(limit)
+    out = []
+    cache: Dict[str, dict] = {}
+    for p in posts:
+        if p["user_id"] not in cache:
+            cache[p["user_id"]] = await _author_card(p["user_id"])
+        out.append(_post_public(p, user["id"], cache[p["user_id"]]))
+    return {"items": out}
+
+
+@api.get("/posts/{pid}")
+async def get_post(pid: str, user: dict = Depends(get_current_user)):
+    p = await db.posts.find_one({"id": pid, "deleted_at": None}, {"_id": 0})
+    if not p:
+        raise HTTPException(404, "Post not found")
+    author = await _author_card(p["user_id"])
+    if p.get("visibility") != "public" and p["user_id"] != user["id"]:
+        raise HTTPException(403, "Private post")
+    data = _post_public(p, user["id"], author)
+    comments = []
+    for c in p.get("comments", []):
+        comments.append({**c, "author": await _author_card(c["user_id"])})
+    data["comment_list"] = comments
+    return data
+
+
+@api.post("/posts/{pid}/like")
+async def like_post(pid: str, user: dict = Depends(get_current_user)):
+    p = await db.posts.find_one({"id": pid, "deleted_at": None})
+    if not p:
+        raise HTTPException(404, "Post not found")
+    likes = set(p.get("likes", []))
+    if user["id"] in likes:
+        likes.discard(user["id"])
+    else:
+        likes.add(user["id"])
+    await db.posts.update_one({"id": pid}, {"$set": {"likes": list(likes)}})
+    return {"likes": len(likes), "liked": user["id"] in likes}
+
+
+@api.post("/posts/{pid}/comments")
+async def comment_post(pid: str, body: CommentIn, user: dict = Depends(get_current_user)):
+    p = await db.posts.find_one({"id": pid, "deleted_at": None})
+    if not p:
+        raise HTTPException(404, "Post not found")
+    c = {"id": str(uuid.uuid4()), "user_id": user["id"], "text": body.text.strip(), "created_at": iso(now_utc())}
+    await db.posts.update_one({"id": pid}, {"$push": {"comments": c}})
+    return {**c, "author": await _author_card(user["id"])}
+
+
+def _find_comment(post: dict, cid: str) -> Optional[dict]:
+    return next((c for c in post.get("comments", []) if c.get("id") == cid), None)
+
+
+def _can_manage_comment(comment: dict, user: dict) -> bool:
+    return comment["user_id"] == user["id"] or user.get("role") == "admin"
+
+
+@api.put("/posts/{pid}/comments/{cid}")
+async def edit_comment(pid: str, cid: str, body: CommentIn, user: dict = Depends(get_current_user)):
+    p = await db.posts.find_one({"id": pid, "deleted_at": None})
+    if not p:
+        raise HTTPException(404, "Post not found")
+    c = _find_comment(p, cid)
+    if not c:
+        raise HTTPException(404, "Comment not found")
+    if not _can_manage_comment(c, user):
+        raise HTTPException(403, "Not allowed")
+    await db.posts.update_one({"id": pid, "comments.id": cid},
+                              {"$set": {"comments.$.text": body.text.strip(), "comments.$.edited_at": iso(now_utc())}})
+    return {"ok": True}
+
+
+@api.delete("/posts/{pid}/comments/{cid}")
+async def delete_comment(pid: str, cid: str, user: dict = Depends(get_current_user)):
+    p = await db.posts.find_one({"id": pid, "deleted_at": None})
+    if not p:
+        raise HTTPException(404, "Post not found")
+    c = _find_comment(p, cid)
+    if not c:
+        raise HTTPException(404, "Comment not found")
+    if not _can_manage_comment(c, user):
+        raise HTTPException(403, "Not allowed")
+    await db.posts.update_one({"id": pid}, {"$pull": {"comments": {"id": cid}}})
+    return {"ok": True}
+
+
+
+@api.delete("/posts/{pid}")
+async def delete_post(pid: str, user: dict = Depends(get_current_user)):
+    await db.posts.update_one({"id": pid, "user_id": user["id"]}, {"$set": {"deleted_at": iso(now_utc())}})
+    return {"ok": True}
+
+
+@api.get("/posts/mine/list")
+async def my_posts(user: dict = Depends(get_current_user)):
+    posts = await db.posts.find({"user_id": user["id"], "deleted_at": None}, {"_id": 0}).sort("created_at", -1).to_list(200)
+    author = await _author_card(user["id"])
+    return {"items": [_post_public(p, user["id"], author) for p in posts]}
+
+
+@api.get("/users/search")
+async def search_users(q: str = "", user: dict = Depends(get_current_user)):
+    if not q.strip():
+        return {"items": []}
+    # ONLY public profiles are searchable
+    rx = {"$regex": re.escape(q.strip()), "$options": "i"}
+    users = await db.users.find(
+        {"privacy.profile_public": True, "deleted_at": None, "name": rx}, {"_id": 0}).limit(30).to_list(30)
+    return {"items": [{"id": u["id"], "name": u["name"], "avatar": u.get("avatar"),
+                       "level": u.get("level", 1), "best_streak": u.get("best_streak", 0)} for u in users]}
+
+
+@api.get("/users/{uid}/profile")
+async def public_profile(uid: str, user: dict = Depends(get_current_user)):
+    u = await db.users.find_one({"id": uid, "deleted_at": None})
+    if not u:
+        raise HTTPException(404, "User not found")
+    is_self = uid == user["id"]
+    if not (u.get("privacy") or {}).get("profile_public") and not is_self:
+        raise HTTPException(403, "This profile is private")
+    workouts = await db.sessions.count_documents({"user_id": uid, "status": "completed"})
+    posts = await db.posts.find({"user_id": uid, "visibility": "public", "deleted_at": None}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    photos = await db.gallery.find({"user_id": uid, "visibility": "public", "deleted_at": None}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    author = await _author_card(uid)
+    # Never expose weight, measurements, target, private photos
+    return {"id": uid, "name": u["name"], "avatar": u.get("avatar"), "level": u.get("level", 1),
+            "xp": u.get("xp", 0), "best_streak": u.get("best_streak", 0), "total_workouts": workouts,
+            "is_self": is_self, "posts": [_post_public(p, user["id"], author) for p in posts],
+            "photos": photos}
+
+
 @api.get("/")
 async def root():
     return {"app": "GymBuddy", "status": "ok", "exercises": len(EXERCISES)}

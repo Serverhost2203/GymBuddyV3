@@ -6,11 +6,12 @@ import {
   CaretRight, Crown, Gear, Medal, ShieldCheck, SignOut, Trophy, User as UserIcon,
 } from "phosphor-react-native";
 import { useState } from "react";
-import { Modal, Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { Modal, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "@/src/api";
 import { Body, Button, Card, Display, useToast } from "@/src/components/ui";
+import { syncReminders } from "@/src/notifications";
 import { useApp } from "@/src/context";
 import { LANGUAGES, type Lang } from "@/src/i18n";
 import { font, makeStyles, radius, setColorScheme, spacing, useTheme } from "@/src/theme";
@@ -41,7 +42,11 @@ export default function Profile() {
     }
   };
 
-  const toggleNotif = (key: string, val: boolean) => patch({ notifications: { ...user?.notifications, [key]: val } });
+  const toggleNotif = (key: string, val: boolean) => {
+    const nextNotifs = { ...user?.notifications, [key]: val };
+    patch({ notifications: nextNotifs });
+    syncReminders({ notifications: nextNotifs, training_days: user?.training_days }).catch(() => {});
+  };
   const togglePrivacy = (key: string, val: boolean) => patch({ privacy: { ...user?.privacy, [key]: val } });
 
   const setTheme = (mode: "dark" | "light") => { setColorScheme(mode); };
@@ -106,6 +111,10 @@ export default function Profile() {
         <Card style={{ gap: spacing.sm }}>
           <Row icon={<Medal color={colors.warning} size={20} weight="fill" />} label={t.gamification.title} onPress={() => router.push("/achievements")} testID="achievements-link" />
           <View style={s.div} />
+          <Row icon={<UserIcon color={colors.brandPrimary} size={20} weight="fill" />} label={t.gallery.title} onPress={() => router.push("/gallery")} testID="gallery-link" />
+          <View style={s.div} />
+          <Row icon={<UserIcon color={colors.muted} size={20} />} label={t.feed.viewProfile} onPress={() => router.push(`/profile/${user?.id}`)} testID="my-public-profile" />
+          <View style={s.div} />
           <View style={s.row}>
             <Trophy color={colors.brandPrimary} size={20} weight="fill" />
             <Text style={s.rowLabel}>{t.profile.leaderboardOptin}</Text>
@@ -142,7 +151,7 @@ export default function Profile() {
         </Card>
 
         {/* Notifications */}
-        <Text style={s.section}>{t.profile.notifications}</Text>
+        <Text style={s.section}>{t.reminders.title}</Text>
         <Card style={{ gap: spacing.xs }}>
           {[["workouts", t.profile.notifyWorkouts], ["weight", t.profile.notifyWeight], ["measurements", t.profile.notifyMeasurements], ["streak", t.profile.notifyStreak]].map(([k, label]) => (
             <View key={k} style={s.row}>
@@ -151,6 +160,16 @@ export default function Profile() {
                 trackColor={{ true: colors.brandPrimary, false: colors.surfaceTertiary }} thumbColor={colors.onBrandPrimary} />
             </View>
           ))}
+          <View style={s.div} />
+          {[["workout_time", t.reminders.workoutTime, "18:00"], ["weight_time", t.reminders.weightTime, "08:00"], ["meal_time", t.reminders.mealTime, "12:00"]].map(([k, label, ph]) => (
+            <View key={k} style={s.row}>
+              <Text style={s.rowLabel}>{label}</Text>
+              <TextInput style={s.timeInput} defaultValue={user?.notifications?.[k] ?? ""} placeholder={ph} placeholderTextColor={colors.muted}
+                onEndEditing={(e) => { const v = e.nativeEvent.text; const nn = { ...user?.notifications, [k]: v }; patch({ notifications: nn }); syncReminders({ notifications: nn, training_days: user?.training_days }).catch(() => {}); }}
+                testID={`time-${k}`} />
+            </View>
+          ))}
+          <Body muted size={font.sm}>{t.reminders.permission}</Body>
         </Card>
 
         {/* Privacy */}
@@ -241,6 +260,7 @@ const useStyles = makeStyles((c) => ({
   section: { color: c.onSurface, fontFamily: font.display, fontWeight: "700", fontSize: font.lg, marginTop: spacing.sm },
   row: { flexDirection: "row", alignItems: "center", gap: spacing.md, minHeight: 44 },
   rowLabel: { flex: 1, color: c.onSurface, fontFamily: font.text, fontSize: font.base, fontWeight: "500" },
+  timeInput: { backgroundColor: c.surfaceTertiary, borderRadius: radius.sm, paddingHorizontal: spacing.md, height: 40, minWidth: 80, color: c.onSurface, fontFamily: font.display, fontWeight: "700", textAlign: "center" },
   div: { height: 1, backgroundColor: c.divider },
   segWrap: { flexDirection: "row", backgroundColor: c.surfaceTertiary, borderRadius: radius.md, padding: 3 },
   segItem: { flex: 1, paddingVertical: spacing.sm, borderRadius: radius.sm, alignItems: "center" },

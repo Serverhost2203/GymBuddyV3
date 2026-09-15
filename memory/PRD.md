@@ -25,7 +25,19 @@ Build a complete, production-ready Android fitness app "GymBuddy" (React Native/
 - Secure JWT auth + role/root-admin authorization; equipment-aware exercise availability (ALL required equipment must be owned); real charts that survive empty data; full localization (no hardcoded UI text); privacy (leaderboards opt-in, no body data exposed).
 
 ## Implemented (2026-06)
-- Auth (register/login/me, rate limiting, bcrypt), root-admin bootstrap.
+
+### Update 3 — Comment moderation
+- Comments can be EDITED and DELETED: users manage their own comments; admins can edit/delete ANY comment on ANY post (backend enforces owner-or-admin, 403 otherwise). Edited comments show an "edited" marker. Web uses confirm dialog, native uses Alert.
+
+### Update 2 — Social, media & reminders
+- Exercise demonstration ANIMATIONS: self-created reanimated SVG motion per movement pattern with working muscles highlighted (exercise detail).
+- Interactive BMI SCALE: tap BMI card to expand colored zone scale with marker.
+- Active workout START button: free workouts no longer auto-run timer; add exercises then Start (plan workouts auto-start). Per-exercise adjustable REST (±15s).
+- GALLERY: upload photos, per-photo public/private toggle; public photos on public profile.
+- Local REMINDERS (expo-notifications): workout/weight/meal with editable times + permission flow (full behavior needs native build).
+- Social FEED tab: text/photo/record posts, like, comment; feed & search show ONLY public profiles; private profiles excluded and their profile returns 403. Public profile never exposes body weight/measurements/private photos.
+- Backend: /gallery, /posts, /feed, like/comments, /users/search, /users/{id}/profile — privacy verified via curl + screenshots. Now 5 tabs (Home/Feed/Workouts/Progress/Profile).
+
 - 11-step validated onboarding; editable profile + settings; avatar via image picker; units/language/theme; notifications & privacy toggles; data export; account soft-delete.
 - 1306-exercise DB; browser with search/muscle/difficulty/available-only filters + pagination; detail with SVG muscle diagram (front/back), localized instructions, alternatives, history, PB.
 - Equipment filtering verified (dumbbells+bench includes Dumbbell Bench Press, excludes Barbell Bench Press). 

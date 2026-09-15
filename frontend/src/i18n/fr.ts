@@ -143,6 +143,25 @@ export const fr: Dict = {
     feature_advanced_generation: "Génération avancée", feature_extended_history: "Historique étendu",
     feature_custom_themes: "Thèmes personnalisés", currentPlan: "Abonnement actuel", note: "Aucun paiement dans cette version.",
   },
+  feed: {
+    title: "Fil", empty: "Aucune publication. Suivez des athlètes publics ou partagez la vôtre.",
+    newPost: "Nouvelle publication", whatsOnMind: "Partagez une victoire, un record ou un conseil…", post: "Publier",
+    like: "J'aime", comment: "Commentaire", comments: "Commentaires", addComment: "Ajouter un commentaire…",
+    searchUsers: "Rechercher des athlètes", publicProfile: "Profil public", privateProfile: "Profil privé",
+    profilePrivateNote: "Ce profil est privé.", record: "Record personnel", photo: "Photo",
+    viewProfile: "Voir le profil", workouts: "Séances", deletePost: "Supprimer la publication", makePublicHint: "Rendez votre profil public pour apparaître dans la recherche et le fil",
+    editComment: "Modifier le commentaire", deleteComment: "Supprimer le commentaire", deleteCommentConfirm: "Supprimer ce commentaire ?", edited: "modifié",
+  },
+  gallery: {
+    title: "Galerie", empty: "Aucune photo.", add: "Ajouter une photo", public: "Public", private: "Privé",
+    makePublic: "Rendre public", makePrivate: "Rendre privé", caption: "Légende", visibility: "Visibilité",
+    deletePhoto: "Supprimer la photo", publicNote: "Les photos publiques apparaissent sur votre profil et le fil.",
+  },
+  reminders: {
+    title: "Rappels", workoutTime: "Rappel d'entraînement", weightTime: "Rappel de pesée",
+    mealTime: "Rappel de repas", permission: "Autorisez les notifications pour recevoir des rappels.",
+    enable: "Activer les rappels", time: "Heure", scheduled: "Rappels programmés",
+  },
   equipment: {},
   muscles: {},
 };

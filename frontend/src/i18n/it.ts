@@ -143,6 +143,25 @@ export const it: Dict = {
     feature_advanced_generation: "Generazione avanzata", feature_extended_history: "Cronologia estesa",
     feature_custom_themes: "Temi personalizzati", currentPlan: "Abbonamento attuale", note: "Nessun pagamento in questa versione.",
   },
+  feed: {
+    title: "Feed", empty: "Ancora nessun post. Segui atleti pubblici o condividi i tuoi.",
+    newPost: "Nuovo post", whatsOnMind: "Condividi un traguardo, record o consiglio…", post: "Pubblica",
+    like: "Mi piace", comment: "Commento", comments: "Commenti", addComment: "Aggiungi un commento…",
+    searchUsers: "Cerca atleti", publicProfile: "Profilo pubblico", privateProfile: "Profilo privato",
+    profilePrivateNote: "Questo profilo è privato.", record: "Record personale", photo: "Foto",
+    viewProfile: "Vedi profilo", workouts: "Allenamenti", deletePost: "Elimina post", makePublicHint: "Rendi pubblico il profilo per apparire in ricerca e feed",
+    editComment: "Modifica commento", deleteComment: "Elimina commento", deleteCommentConfirm: "Eliminare questo commento?", edited: "modificato",
+  },
+  gallery: {
+    title: "Galleria", empty: "Ancora nessuna foto.", add: "Aggiungi foto", public: "Pubblico", private: "Privato",
+    makePublic: "Rendi pubblico", makePrivate: "Rendi privato", caption: "Didascalia", visibility: "Visibilità",
+    deletePhoto: "Elimina foto", publicNote: "Le foto pubbliche appaiono nel profilo e nel feed.",
+  },
+  reminders: {
+    title: "Promemoria", workoutTime: "Promemoria allenamento", weightTime: "Promemoria peso",
+    mealTime: "Promemoria pasti", permission: "Consenti le notifiche per ricevere promemoria.",
+    enable: "Attiva promemoria", time: "Ora", scheduled: "Promemoria programmati",
+  },
   equipment: {},
   muscles: {},
 };

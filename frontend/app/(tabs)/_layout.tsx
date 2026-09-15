@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { ChartLineUp, House, Barbell, User } from "phosphor-react-native";
+import { ChartLineUp, House, Barbell, User, UsersThree } from "phosphor-react-native";
 import { Platform } from "react-native";
 
 import { useApp } from "@/src/context";
@@ -24,6 +24,7 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: t.tabs.home, tabBarIcon: ({ color, size }) => <House color={color} size={size} weight="fill" /> }} />
+      <Tabs.Screen name="feed" options={{ title: t.feed.title, tabBarIcon: ({ color, size }) => <UsersThree color={color} size={size} weight="fill" /> }} />
       <Tabs.Screen name="workouts" options={{ title: t.tabs.workouts, tabBarIcon: ({ color, size }) => <Barbell color={color} size={size} weight="fill" /> }} />
       <Tabs.Screen name="progress" options={{ title: t.tabs.progress, tabBarIcon: ({ color, size }) => <ChartLineUp color={color} size={size} weight="fill" /> }} />
       <Tabs.Screen name="profile" options={{ title: t.tabs.profile, tabBarIcon: ({ color, size }) => <User color={color} size={size} weight="fill" /> }} />

@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "@/src/api";
 import { Body, Button, Card, Display, EmptyState, Segmented, Skeleton, StatCard, useToast } from "@/src/components/ui";
+import { BMIScale } from "@/src/components/BMIScale";
 import { useApp } from "@/src/context";
 import { font, makeStyles, radius, spacing, useTheme } from "@/src/theme";
 
@@ -19,6 +20,7 @@ export default function Progress() {
   const s = useStyles();
   const [tab, setTab] = useState("weight");
   const [modal, setModal] = useState(false);
+  const [bmiOpen, setBmiOpen] = useState(false);
   const [w, setW] = useState("");
 
   const summary = useQuery({ queryKey: ["progress"], queryFn: () => api.get("/progress/summary") });
@@ -63,14 +65,17 @@ export default function Progress() {
               <View style={s.cardHead}><Scales color={colors.brandPrimary} size={20} weight="fill" /><Body style={{ fontWeight: "700" }}>{t.progress.bmi}</Body></View>
               {d?.bmi ? (
                 <>
-                  <View style={s.bmiRow}>
-                    <Display size={font["3xl"]} style={{ color: colors.brandPrimary }}>{d.bmi}</Display>
-                    <View style={{ flex: 1 }}>
-                      <Body style={{ fontWeight: "700" }}>{bmiCatLabel(d.bmi_category)}</Body>
-                      {d.bmi_range?.min_weight ? <Body muted size={font.sm}>{t.progress.bmiRange}: {d.bmi_range.min_weight}–{d.bmi_range.max_weight} kg</Body> : null}
+                  <Pressable onPress={() => setBmiOpen((v) => !v)} testID="bmi-toggle">
+                    <View style={s.bmiRow}>
+                      <Display size={font["3xl"]} style={{ color: colors.brandPrimary }}>{d.bmi}</Display>
+                      <View style={{ flex: 1 }}>
+                        <Body style={{ fontWeight: "700" }}>{bmiCatLabel(d.bmi_category)}</Body>
+                        {d.bmi_range?.min_weight ? <Body muted size={font.sm}>{t.progress.bmiRange}: {d.bmi_range.min_weight}–{d.bmi_range.max_weight} kg</Body> : null}
+                      </View>
                     </View>
-                  </View>
-                  <Body muted size={font.sm}>{t.progress.bmiDisclaimer}</Body>
+                  </Pressable>
+                  {bmiOpen ? <BMIScale bmi={d.bmi} categoryLabel={bmiCatLabel(d.bmi_category)} /> : null}
+                  <Body muted size={font.sm} style={{ marginTop: spacing.sm }}>{t.progress.bmiDisclaimer}</Body>
                 </>
               ) : <Body muted>{t.progress.noData}</Body>}
             </Card>

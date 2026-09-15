@@ -2,7 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { LinearGradient } from "expo-linear-gradient";
 import { Stack, useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
-import { Check, Plus, Trash, X } from "phosphor-react-native";
+import { Check, Play, Plus, Trash, X } from "phosphor-react-native";
 import { useEffect, useRef, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,6 +29,7 @@ export default function ActiveWorkout() {
   const [exs, setExs] = useState<ExT[]>([]);
   const [elapsed, setElapsed] = useState(0);
   const [rest, setRest] = useState<number | null>(null);
+  const [started, setStarted] = useState(false);
   const [cancelModal, setCancelModal] = useState(false);
   const [summary, setSummary] = useState<any>(null);
   const startRef = useRef<number>(Date.now());
@@ -38,14 +39,16 @@ export default function ActiveWorkout() {
       if (!sess || !sess.id) { router.replace("/(tabs)"); return; }
       setSession(sess);
       setExs(sess.exercises ?? []);
-      startRef.current = new Date(sess.started_at).getTime();
+      // Plan-based workouts start immediately; free/empty workouts wait for Start.
+      if (sess.plan_id) { setStarted(true); startRef.current = new Date(sess.started_at).getTime(); }
     });
   }, [router]);
 
   useEffect(() => {
+    if (!started) return;
     const iv = setInterval(() => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)), 1000);
     return () => clearInterval(iv);
-  }, []);
+  }, [started]);
 
   useEffect(() => {
     if (rest == null) return;
@@ -63,8 +66,13 @@ export default function ActiveWorkout() {
     const next = exs.map((e, i) => i !== ei ? e : { ...e, sets: e.sets.map((st, j) => j !== si ? st : { ...st, done: !st.done }) });
     const nowDone = next[ei].sets[si].done;
     persist(next);
-    if (nowDone) { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); setRest(exs[ei].rest || 90); }
+    if (nowDone && started) { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); setRest(exs[ei].rest || 90); }
   };
+
+  const setRestFor = (ei: number, val: number) =>
+    persist(exs.map((e, i) => i !== ei ? e : { ...e, rest: Math.max(0, val) }));
+
+  const beginWorkout = () => { setStarted(true); startRef.current = Date.now(); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {}); };
 
   const editSet = (ei: number, si: number, key: "reps" | "weight", val: string) => {
     const num = parseFloat(val) || 0;
@@ -111,7 +119,7 @@ export default function ActiveWorkout() {
       <View style={[s.header, { paddingTop: insets.top + spacing.sm }]}>
         <View>
           <Display size={font.lg} numberOfLines={1}>{session?.name ?? t.workout.active}</Display>
-          <Text style={s.timer}>{fmt(elapsed)}</Text>
+          <Text style={s.timer}>{started ? fmt(elapsed) : t.common.start}</Text>
         </View>
         <Pressable onPress={() => setCancelModal(true)} hitSlop={10} testID="cancel-workout"><X color={colors.error} size={26} /></Pressable>
       </View>
@@ -122,6 +130,12 @@ export default function ActiveWorkout() {
         ) : exs.map((ex, ei) => (
           <Card key={ei} style={{ gap: spacing.sm }} testID={`active-ex-${ei}`}>
             <Body style={{ fontWeight: "700", fontSize: font.lg }}>{ex.name}</Body>
+            <View style={s.restCtl}>
+              <Text style={s.restCtlLabel}>{t.plans.rest}</Text>
+              <Pressable style={s.restStep} onPress={() => setRestFor(ei, (ex.rest || 90) - 15)} testID={`rest-minus-${ei}`}><Text style={s.restStepText}>−15</Text></Pressable>
+              <Text style={s.restVal}>{ex.rest || 90}s</Text>
+              <Pressable style={s.restStep} onPress={() => setRestFor(ei, (ex.rest || 90) + 15)} testID={`rest-plus-${ei}`}><Text style={s.restStepText}>+15</Text></Pressable>
+            </View>
             <View style={s.setHead}>
               <Text style={[s.col, { flex: 0.6 }]}>{t.workout.set}</Text>
               <Text style={[s.col, { flex: 1 }]}>{t.plans.weight}</Text>
@@ -151,7 +165,12 @@ export default function ActiveWorkout() {
       </ScrollView>
 
       <View style={[s.footer, { paddingBottom: insets.bottom + spacing.md }]}>
-        <Button title={t.workout.finishWorkout} onPress={finish} testID="finish-workout" />
+        {started ? (
+          <Button title={t.workout.finishWorkout} onPress={finish} testID="finish-workout" />
+        ) : (
+          <Button title={t.common.start} onPress={beginWorkout} disabled={exs.length === 0} testID="start-free-workout"
+            icon={<Play color={colors.onBrandPrimary} size={18} weight="fill" />} />
+        )}
       </View>
 
       {/* Rest timer overlay */}
@@ -206,6 +225,11 @@ const useStyles = makeStyles((c) => ({
   timer: { fontFamily: font.display, fontWeight: "700", fontSize: font.xl, color: c.brandPrimary },
   content: { padding: spacing.lg, gap: spacing.md },
   setHead: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  restCtl: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
+  restCtlLabel: { color: c.muted, fontFamily: font.text, fontSize: font.sm, fontWeight: "600", flex: 1 },
+  restStep: { paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: radius.sm, backgroundColor: c.surfaceTertiary },
+  restStepText: { color: c.brandPrimary, fontFamily: font.text, fontWeight: "700", fontSize: font.sm },
+  restVal: { color: c.onSurface, fontFamily: font.display, fontWeight: "700", fontSize: font.base, minWidth: 46, textAlign: "center" },
   col: { color: c.muted, fontFamily: font.text, fontSize: font.sm, fontWeight: "600", textAlign: "center" },
   setRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, paddingVertical: 4 },
   setDone: { opacity: 0.6 },

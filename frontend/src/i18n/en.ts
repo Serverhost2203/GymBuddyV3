@@ -141,6 +141,25 @@ export const en = {
     feature_advanced_generation: "Advanced plan generation", feature_extended_history: "Extended history",
     feature_custom_themes: "Custom themes", currentPlan: "Current plan", note: "No payment required in this build.",
   },
+  feed: {
+    title: "Feed", empty: "No posts yet. Follow public athletes or share your own.",
+    newPost: "New Post", whatsOnMind: "Share a win, PR or tip…", post: "Post",
+    like: "Like", comment: "Comment", comments: "Comments", addComment: "Add a comment…",
+    searchUsers: "Search athletes", publicProfile: "Public profile", privateProfile: "Private profile",
+    profilePrivateNote: "This profile is private.", record: "Personal record", photo: "Photo",
+    viewProfile: "View profile", workouts: "Workouts", deletePost: "Delete post", makePublicHint: "Set your profile public to appear in search & feed",
+    editComment: "Edit comment", deleteComment: "Delete comment", deleteCommentConfirm: "Really delete this comment?", edited: "edited",
+  },
+  gallery: {
+    title: "Gallery", empty: "No photos yet.", add: "Add Photo", public: "Public", private: "Private",
+    makePublic: "Make public", makePrivate: "Make private", caption: "Caption", visibility: "Visibility",
+    deletePhoto: "Delete photo", publicNote: "Public photos appear on your profile & feed.",
+  },
+  reminders: {
+    title: "Reminders", workoutTime: "Workout reminder time", weightTime: "Weight check-in time",
+    mealTime: "Meal logging time", permission: "Allow notifications to get reminders.",
+    enable: "Enable reminders", time: "Time", scheduled: "Reminders scheduled",
+  },
   equipment: {},
   muscles: {},
 };

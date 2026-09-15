@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "@/src/api";
 import { Body, Card, Display, Segmented, Skeleton, StatCard } from "@/src/components/ui";
-import { MuscleFigure } from "@/src/components/MuscleFigure";
+import { ExerciseAnimation } from "@/src/components/ExerciseAnimation";
 import { useApp } from "@/src/context";
 import { font, makeStyles, radius, spacing, useTheme } from "@/src/theme";
 
@@ -42,7 +42,7 @@ export default function ExerciseDetail() {
             <Segmented value={view} onChange={(v) => setView(v as any)} testID="muscle-view"
               options={[{ key: "front", label: t.exercises.front }, { key: "back", label: t.exercises.back }]} />
             <View style={s.figRow}>
-              <MuscleFigure primary={ex.primary_muscle} secondary={ex.secondary_muscles} width={170} view={view} />
+              <ExerciseAnimation pattern={ex.movement_pattern} primary={ex.primary_muscle} secondary={ex.secondary_muscles} view={view} width={170} />
             </View>
             <View style={s.legend}>
               <View style={s.legendItem}><View style={[s.dot, { backgroundColor: colors.brandPrimary }]} /><Body size={font.sm}>{t.exercises.primary}: {ex.primary_muscle_label}</Body></View>
