@@ -32,11 +32,11 @@ load_dotenv(ROOT_DIR / ".env")
 
 MONGO_URL = os.environ["MONGO_URL"]
 DB_NAME = os.environ["DB_NAME"]
-JWT_SECRET = os.environ.get("JWT_SECRET", "change-me-in-production-gymbuddy")
+JWT_SECRET = os.environ["JWT_SECRET"]
 JWT_ALGO = "HS256"
 ACCESS_DAYS = 30
-ROOT_ADMIN_EMAIL = os.environ.get("ROOT_ADMIN_EMAIL", "admin@gymbuddy.app").lower()
-ROOT_ADMIN_PASSWORD = os.environ.get("ROOT_ADMIN_PASSWORD", "AdminGym2026!")
+ROOT_ADMIN_EMAIL = os.environ["ROOT_ADMIN_EMAIL"].lower()
+ROOT_ADMIN_PASSWORD = os.environ.get("ROOT_ADMIN_PASSWORD")
 
 client = AsyncIOMotorClient(MONGO_URL)
 db = client[DB_NAME]
@@ -110,6 +110,10 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
         raise err
     user = await db.users.find_one({"id": claims.get("sub")})
     if not user or user.get("deleted_at"):
+        raise err
+    # invalidate tokens issued before the user's last password change
+    pw_changed = user.get("pw_changed_at")
+    if pw_changed and claims.get("iat", 0) < pw_changed:
         raise err
     return user
 
@@ -334,7 +338,7 @@ async def forgot_password(body: ForgotPasswordIn):
     email = body.email.lower()
     rate_limit("forgot:" + email, limit=4, window=300)
     user = await db.users.find_one({"email": email, "deleted_at": None})
-    # Always return ok to avoid email enumeration.
+    # Always return ok to avoid email enumeration (root email included).
     if user and not user.get("root_admin"):
         code = f"{secrets.randbelow(1000000):06d}"
         await db.password_resets.update_one(
@@ -349,8 +353,6 @@ async def forgot_password(body: ForgotPasswordIn):
                              html=reset_code_email_html(user.get("name", "there"), code))
         except HTTPException:
             logger.error("reset email failed for %s", email)
-    elif user and user.get("root_admin"):
-        raise HTTPException(403, "The head admin password can only be changed while signed in.")
     return {"ok": True}
 
 
@@ -373,7 +375,8 @@ async def reset_password(body: ResetPasswordIn):
     user = await db.users.find_one({"email": email, "deleted_at": None})
     if not user:
         raise HTTPException(400, "Invalid or expired code.")
-    await db.users.update_one({"id": user["id"]}, {"$set": {"password_hash": hash_pw(body.password)}})
+    await db.users.update_one({"id": user["id"]}, {"$set": {"password_hash": hash_pw(body.password),
+                                                            "pw_changed_at": int(now_utc().timestamp())}})
     await db.password_resets.delete_one({"email": email})
     return {"token": make_token(user["id"]), "user": public_user(user)}
 
@@ -1207,6 +1210,8 @@ async def admin_change_role(uid: str, body: RoleChange, admin: dict = Depends(re
     if target.get("root_admin"):
         raise HTTPException(403, "The root admin cannot be modified.")
     if body.action == "promote":
+        if not admin.get("root_admin"):
+            raise HTTPException(403, "Only the head admin can grant admin rights.")
         await db.users.update_one({"id": uid}, {"$set": {"role": "admin"}})
     elif body.action == "demote":
         if not admin.get("root_admin"):
@@ -1247,7 +1252,8 @@ async def admin_set_password(uid: str, body: SetPasswordIn, admin: dict = Depend
         raise HTTPException(404, "User not found")
     if target.get("root_admin") and target["id"] != admin["id"]:
         raise HTTPException(403, "Cannot change another head admin's password.")
-    await db.users.update_one({"id": uid}, {"$set": {"password_hash": hash_pw(body.password)}})
+    await db.users.update_one({"id": uid}, {"$set": {"password_hash": hash_pw(body.password),
+                                                      "pw_changed_at": int(now_utc().timestamp())}})
     return {"ok": True}
 
 
@@ -1597,7 +1603,7 @@ async def root():
 
 
 app.include_router(api)
-app.add_middleware(CORSMiddleware, allow_credentials=True, allow_origins=["*"],
+app.add_middleware(CORSMiddleware, allow_credentials=False, allow_origins=["*"],
                    allow_methods=["*"], allow_headers=["*"])
 
 

@@ -26,6 +26,12 @@ Build a complete, production-ready Android fitness app "GymBuddy" (React Native/
 
 ## Implemented (2026-06)
 
+### Update 8 — Security audit remediation
+- SEC-001 (Critical): removed source-default secrets — JWT_SECRET/ROOT_ADMIN_EMAIL/ROOT_ADMIN_PASSWORD now required env (fail-closed); rotated ROOT_ADMIN_PASSWORD in .env and rotated the admin@gymbuddy.app test account off the old public default.
+- SEC-002 (Medium): promote-to-admin is now root-only (require_root), matching demote.
+- SEC-003 (Low): password change (reset + admin set) sets `pw_changed_at`; get_current_user rejects tokens issued before it (session invalidation on password change).
+- Hardening: forgot-password no longer 403s for root email (returns generic ok, no enumeration); CORS allow_credentials=False (Bearer-only).
+
 ### Update 7 — Password reset, show/hide, hard delete, root-only user management
 - Forgot password: POST /auth/forgot-password (6-digit code emailed via Emergent Resend, 15-min expiry, 5-attempt cap, single-use, anti-enumeration, blocked for root email) + POST /auth/reset-password. New /app/frontend/app/(auth)/forgot.tsx (2-step) + login "Forgot password?" link. Email sender in /app/backend/email_service.py with mandatory guardrail gate.
 - Show/hide password: reusable /app/frontend/src/components/PasswordInput.tsx (eye toggle) used on login, register, forgot, admin set-password.
