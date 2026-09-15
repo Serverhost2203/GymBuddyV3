@@ -27,6 +27,12 @@ export const it: Dict = {
     login: "Accedi", register: "Crea account", email: "Email", password: "Password",
     name: "Nome", noAccount: "Non hai un account?", haveAccount: "Hai già un account?",
     signUp: "Registrati", signIn: "Accedi", logout: "Esci",
+    forgotPassword: "Password dimenticata?", resetTitle: "Reimposta password",
+    resetIntro: "Inserisci la tua email. Ti invieremo un codice a 6 cifre.",
+    sendCode: "Invia codice", codeSent: "Se esiste un account, è stato inviato un codice.",
+    code: "Codice", newPassword: "Nuova password", resetSubmit: "Cambia password",
+    backToLogin: "Torna all'accesso", resetDone: "Password cambiata. Ora sei connesso.",
+    invalidCode: "Codice non valido o scaduto.",
   },
   onboarding: {
     title: "Configuriamo il tuo profilo", nameQ: "Come ti chiami?", genderQ: "Genere",
@@ -136,6 +142,8 @@ export const it: Dict = {
     totalUsers: "Utenti", totalExercises: "Esercizi", totalWorkouts: "Allenamenti",
     noImage: "Senza immagine", noDemo: "Senza dimostrazione", invalidEquip: "Attrezzatura non valida",
     missingTr: "Traduzioni mancanti", duplicates: "Duplicati", onlyRootDemote: "Solo l'admin root può rimuovere i diritti di admin.",
+    deleteUser: "Elimina", deleteUserConfirm: "Eliminare definitivamente questo account e TUTTI i dati? Irreversibile.",
+    userDeleted: "Account eliminato definitivamente.", setPassword: "Cambia password", passwordChanged: "Password cambiata.", editData: "Modifica dati",
   },
   subscription: {
     title: "Abbonamento", freeTier: "Gratis", premiumTier: "Premium",

@@ -1,0 +1,43 @@
+{
+  "summary": "ITERATION 3 — All new features verified end-to-end. Backend: 18/18 tests pass in /app/backend/tests/test_password_reset_and_root_admin.py covering forgot-password (200 for existing user + reset record with hashed code / attempts=0 / ~15min expiry, 200 for unknown email — no enumeration, 403 for root email), reset-password (wrong code 400 + attempts increment, 5 attempts 429 + record deleted, expired 400 + record deleted, correct code 200 with {token,user} + login-with-new-pw works + single-use record deleted), hard-delete self (user + measurements/plans/sessions/food/posts/gallery/prs all purged), root-only admin delete (regular admin 403, root 200 with full purge, cannot delete root 403), root-only admin set-password (regular admin 403, root 200 + target login with new pw works + old pw 401), root-only admin edit user data (regular admin 403, root 200 with name updated). Emergent Resend confirmed: backend log shows HTTP/1.1 202 Accepted from https://integrations.emergentagent.com/api/v1/email/send for the forgot-password call with delivered@resend.dev. Frontend: login screen has 'Forgot password?' link + show/hide eye toggle (password type -> text on toggle, visual reveal confirmed via screenshot), register screen has reg-password-toggle, forgot screen advances from step 1 (email) to step 2 (code + new password + toggle) after Send code with the info banner shown; admin panel: as ROOT (myscraptv@gmail.com) the Users tab renders 34 delete-{id}, 35 setpw-{id} (34 users + root's own row), and 34 edit-{id} buttons, the admin-pw-input modal and admin-edit-name modal both open; as REGULAR admin (admin@gymbuddy.app) 0 of each of those buttons render — only promote-/disable- are shown (31 promote + 34 disable), confirming root-only gating on the UI.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "/admin (Users tab, root view, 390px viewport)",
+        "issues": [
+          "Third-row action buttons (Daten bearbeiten / Passwort ändern / Delete) overflow horizontally on 390px width — the trash (Delete) button is only partially visible in the mobile viewport and requires horizontal scroll to tap. Consider wrapping to a second line or using icon-only buttons for narrow screens. Reference: /app/frontend/app/admin.tsx:110-119 (userActions row is flexDirection:row with three Buttons).",
+          "German label 'Zum Admin machen' (Promote) is longer than English 'Make Admin' and further crowds the row on non-English locales."
+        ]
+      }
+    ],
+    "react_native_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_password_reset_and_root_admin.py",
+    "/app/test_reports/pytest/pytest_iteration3.xml"
+  ],
+  "action_items": [
+    "Consider wrapping the per-user admin actions on /admin into two rows or icon-only buttons on narrow viewports so the Delete (trash) button is fully tappable without horizontal scrolling. Not blocking — testIDs delete-{id}/setpw-{id}/edit-{id} are all rendered and reachable.",
+    "One-time housekeeping: admin@gymbuddy.app was demoted to role='user' at some point during previous iterations' promote/demote tests; it had to be re-promoted via root during this iteration for the review flow to work. Because startup bootstrap only enforces root_admin invariance and NOT admin role for admin@gymbuddy.app, this is not auto-healed. Either (a) add a bootstrap step that ensures admin@gymbuddy.app is role='admin' if the account exists, OR (b) accept that the regression test suite must not demote fixture accounts."
+  ],
+  "critical_code_review_comments": [
+    "Forgot-password endpoint correctly avoids enumeration (always 200 unless root email 403) and stores a bcrypt hash of the 6-digit code with 15-min TTL and attempts=0 — server.py:332-354.",
+    "Reset-password endpoint enforces attempts<5 (deletes record + 429), TTL (deletes + 400), invalid code (increments attempts + 400), and single-use (deletes on success) — server.py:357-378. Solid.",
+    "purge_user_data (server.py:381-388) hard-deletes across sessions/plans/measurements/food_entries/food_favorites/custom_foods/gallery/posts/prs and $pulls likes+comments from OTHER posts, then deletes the user. Verified in DB after both self-delete and root-delete flows. Correct.",
+    "admin_delete_user (1232-1240), admin_set_password (1243-1251) and admin_edit_user (1254-1265) all sit behind Depends(require_root); admin_delete_user additionally 403s on root target, admin_set_password additionally 403s on OTHER root target (still allows root to change own password). Matches requirement.",
+    "PasswordInput component (frontend/src/components/PasswordInput.tsx) reuses `${testID}-toggle` for the eye Pressable — matches the review contract (login-password-toggle, reg-password-toggle, forgot-password-toggle, admin-pw-input-toggle)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_password_reset_and_root_admin.py (new)",
+    "/app/test_reports/pytest/pytest_iteration3.xml (new)"
+  ],
+  "success_rate": { "backend": "100% (18/18)", "frontend": "100% of scoped flows (login toggle, register toggle, forgot 2-step, admin root vs regular gating, both modals open+submit)" },
+  "seed_data_creation": "Multiple ephemeral test users (email test_<uuid>@example.com) were registered during tests; each was purged by their own DELETE /users/me or by root DELETE /admin/users/{uid} inside the test. delivered@resend.dev remains as a test user in DB. Regular admin admin@gymbuddy.app was re-promoted to role='admin' via root (root_admin still false).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Root: myscraptv@gmail.com / RootPass123 (root_admin=true). Regular admin: admin@gymbuddy.app / AdminGym2026! (root_admin=false — was re-promoted during this iteration; do NOT demote in future regression runs, or restore afterwards). Reusable pytest suite: /app/backend/tests/test_password_reset_and_root_admin.py (uses pymongo + bcrypt to plant a known code hash for the reset success test; loads MONGO_URL/DB_NAME from /app/backend/.env). Frontend testIDs verified: login-email/login-password/login-password-toggle/go-forgot/login-submit, reg-name/reg-email/reg-password/reg-password-toggle/reg-submit, forgot-email/forgot-send/forgot-code/forgot-password/forgot-password-toggle/forgot-submit/forgot-info, delete-{id}/setpw-{id}/edit-{id}, admin-pw-input/admin-pw-save, admin-edit-name/admin-edit-save.",
+  "rca_of_issue": "N/A — all requested features work as designed."
+}

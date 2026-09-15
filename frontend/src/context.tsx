@@ -44,6 +44,7 @@ type Ctx = {
   setLang: (l: Lang) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<void>;
+  resetPassword: (email: string, code: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
   updateUser: (patch: Partial<User>) => void;
@@ -93,6 +94,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     applyUser(res.user);
   }, [applyUser]);
 
+  const resetPassword = useCallback(async (email: string, code: string, password: string) => {
+    const res = await api.post<{ token: string; user: User }>("/auth/reset-password", { email, code, password }, false);
+    await storage.secureSet(TOKEN_KEY, res.token);
+    applyUser(res.user);
+  }, [applyUser]);
+
   const logout = useCallback(async () => {
     await storage.secureRemove(TOKEN_KEY);
     setUser(null);
@@ -123,6 +130,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       value={{
         user, loading, lang, t: dictionaries[lang], isPremium: user?.subscription === "premium",
         setLang, login, register, logout, refresh, updateUser,
+        resetPassword,
       }}
     >
       {children}

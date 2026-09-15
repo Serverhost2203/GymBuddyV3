@@ -26,6 +26,12 @@ Build a complete, production-ready Android fitness app "GymBuddy" (React Native/
 
 ## Implemented (2026-06)
 
+### Update 7 — Password reset, show/hide, hard delete, root-only user management
+- Forgot password: POST /auth/forgot-password (6-digit code emailed via Emergent Resend, 15-min expiry, 5-attempt cap, single-use, anti-enumeration, blocked for root email) + POST /auth/reset-password. New /app/frontend/app/(auth)/forgot.tsx (2-step) + login "Forgot password?" link. Email sender in /app/backend/email_service.py with mandatory guardrail gate.
+- Show/hide password: reusable /app/frontend/src/components/PasswordInput.tsx (eye toggle) used on login, register, forgot, admin set-password.
+- Hard delete: self-delete and root admin delete PERMANENTLY purge user + all data (sessions/plans/measurements/food/gallery/posts/prs + pull likes/comments from others). No soft delete.
+- Root-only user management (require_root): DELETE /admin/users/{uid}, POST /admin/users/{uid}/password, PUT /admin/users/{uid}. Admin panel shows Delete/Change-password/Edit-data buttons ONLY to root (hidden for appointed admins). Root can change own password via own row.
+
 ### Update 6 — Super-admin fix
 - ROOT_ADMIN_EMAIL changed to `myscraptv@gmail.com`; startup bootstrap promotes that existing account (password preserved) and now ENFORCES on every startup that only this email holds `root_admin` (all others demoted). Registration auto-grants root for this email only. Old test admin `admin@gymbuddy.app` stays a regular (non-root) admin. Verified by testing_agent: 12/12 (single-root invariant, root protection vs regular admin, restart idempotency).
 

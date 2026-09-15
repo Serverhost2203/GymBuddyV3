@@ -27,6 +27,12 @@ export const fr: Dict = {
     login: "Connexion", register: "Créer un compte", email: "E-mail", password: "Mot de passe",
     name: "Nom", noAccount: "Pas de compte ?", haveAccount: "Déjà un compte ?",
     signUp: "S'inscrire", signIn: "Se connecter", logout: "Déconnexion",
+    forgotPassword: "Mot de passe oublié ?", resetTitle: "Réinitialiser le mot de passe",
+    resetIntro: "Saisissez votre e-mail. Nous vous enverrons un code à 6 chiffres.",
+    sendCode: "Envoyer le code", codeSent: "Si un compte existe, un code a été envoyé.",
+    code: "Code", newPassword: "Nouveau mot de passe", resetSubmit: "Changer le mot de passe",
+    backToLogin: "Retour à la connexion", resetDone: "Mot de passe modifié. Vous êtes connecté.",
+    invalidCode: "Code invalide ou expiré.",
   },
   onboarding: {
     title: "Configurons votre profil", nameQ: "Comment vous appelez-vous ?", genderQ: "Genre",
@@ -136,6 +142,8 @@ export const fr: Dict = {
     totalUsers: "Utilisateurs", totalExercises: "Exercices", totalWorkouts: "Séances",
     noImage: "Sans image", noDemo: "Sans démonstration", invalidEquip: "Équipement invalide",
     missingTr: "Traductions manquantes", duplicates: "Doublons", onlyRootDemote: "Seul l'admin racine peut retirer les droits admin.",
+    deleteUser: "Supprimer", deleteUserConfirm: "Supprimer définitivement ce compte et TOUTES les données ? Irréversible.",
+    userDeleted: "Compte supprimé définitivement.", setPassword: "Changer le mot de passe", passwordChanged: "Mot de passe changé.", editData: "Modifier les données",
   },
   subscription: {
     title: "Abonnement", freeTier: "Gratuit", premiumTier: "Premium",

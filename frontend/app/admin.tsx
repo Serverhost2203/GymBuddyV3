@@ -1,12 +1,13 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Stack, useRouter } from "expo-router";
-import { CaretLeft, ShieldCheck, ShieldSlash, Warning } from "phosphor-react-native";
+import { CaretLeft, Key, PencilSimple, ShieldCheck, ShieldSlash, Trash, Warning } from "phosphor-react-native";
 import { useState } from "react";
-import { ScrollView, Text, View } from "react-native";
+import { Alert, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "@/src/api";
 import { Body, Button, Card, Display, Segmented, Skeleton, StatCard, useToast } from "@/src/components/ui";
+import { PasswordInput } from "@/src/components/PasswordInput";
 import { useApp } from "@/src/context";
 import { font, makeStyles, radius, spacing, useTheme } from "@/src/theme";
 
@@ -19,6 +20,12 @@ export default function Admin() {
   const toast = useToast();
   const s = useStyles();
   const [tab, setTab] = useState("overview");
+  const isRoot = !!user?.root_admin;
+  const [pwTarget, setPwTarget] = useState<any>(null);
+  const [pwValue, setPwValue] = useState("");
+  const [editTarget, setEditTarget] = useState<any>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
 
   const overview = useQuery({ queryKey: ["admin-overview"], queryFn: () => api.get("/admin/overview") });
   const users = useQuery({ queryKey: ["admin-users"], queryFn: () => api.get("/admin/users"), enabled: tab === "users" });
@@ -27,11 +34,35 @@ export default function Admin() {
 
   const changeRole = async (uid: string, action: "promote" | "demote") => {
     try { await api.patch(`/admin/users/${uid}/role`, { action }); await qc.invalidateQueries({ queryKey: ["admin-users"] }); toast.show(t.common.done, "success"); }
-    catch (e: any) { toast.show(action === "demote" ? t.admin.onlyRootDemote : t.errors.generic, "error"); }
+    catch { toast.show(action === "demote" ? t.admin.onlyRootDemote : t.errors.generic, "error"); }
   };
   const toggleDisable = async (uid: string) => {
     try { await api.patch(`/admin/users/${uid}/disable`, {}); await qc.invalidateQueries({ queryKey: ["admin-users"] }); }
     catch { toast.show(t.errors.generic, "error"); }
+  };
+  const doDelete = (u: any) => {
+    const run = async () => {
+      try { await api.del(`/admin/users/${u.id}`); await qc.invalidateQueries({ queryKey: ["admin-users"] }); toast.show(t.admin.userDeleted, "success"); }
+      catch { toast.show(t.errors.generic, "error"); }
+    };
+    if (Platform.OS === "web") { if (window.confirm(t.admin.deleteUserConfirm)) run(); return; }
+    Alert.alert(t.admin.deleteUser, t.admin.deleteUserConfirm, [
+      { text: t.common.cancel, style: "cancel" },
+      { text: t.admin.deleteUser, style: "destructive", onPress: run },
+    ]);
+  };
+  const savePassword = async () => {
+    if (pwValue.length < 8) return toast.show(t.errors.passwordShort, "error");
+    try { await api.post(`/admin/users/${pwTarget.id}/password`, { password: pwValue }); setPwTarget(null); setPwValue(""); toast.show(t.admin.passwordChanged, "success"); }
+    catch { toast.show(t.errors.generic, "error"); }
+  };
+  const openEdit = (u: any) => { setEditTarget(u); setEditName(u.name ?? ""); setEditEmail(u.email ?? ""); };
+  const saveEdit = async () => {
+    try {
+      await api.put(`/admin/users/${editTarget.id}`, { name: editName });
+      await qc.invalidateQueries({ queryKey: ["admin-users"] });
+      setEditTarget(null); toast.show(t.common.done, "success");
+    } catch { toast.show(t.errors.generic, "error"); }
   };
 
   return (
@@ -76,6 +107,22 @@ export default function Admin() {
                   <Button title={u.deleted_at ? t.admin.enable : t.admin.disable} small variant="secondary" onPress={() => toggleDisable(u.id)} testID={`disable-${u.id}`} />
                 </View>
               ) : null}
+              {isRoot && !u.root_admin ? (
+                <View style={s.userActions}>
+                  <Button title={t.admin.editData} small variant="secondary" onPress={() => openEdit(u)} testID={`edit-${u.id}`}
+                    icon={<PencilSimple color={colors.onSurface} size={16} />} />
+                  <Button title={t.admin.setPassword} small variant="secondary" onPress={() => { setPwTarget(u); setPwValue(""); }} testID={`setpw-${u.id}`}
+                    icon={<Key color={colors.onSurface} size={16} />} />
+                  <Button title={t.admin.deleteUser} small variant="ghost" onPress={() => doDelete(u)} testID={`delete-${u.id}`}
+                    icon={<Trash color={colors.error} size={16} />} />
+                </View>
+              ) : null}
+              {isRoot && u.root_admin && u.id === user?.id ? (
+                <View style={s.userActions}>
+                  <Button title={t.admin.setPassword} small variant="secondary" onPress={() => { setPwTarget(u); setPwValue(""); }} testID={`setpw-${u.id}`}
+                    icon={<Key color={colors.onSurface} size={16} />} />
+                </View>
+              ) : null}
             </Card>
           )))}
 
@@ -115,6 +162,29 @@ export default function Admin() {
           </View>
         ))}
       </ScrollView>
+
+      <Modal visible={!!pwTarget} transparent animationType="slide" onRequestClose={() => setPwTarget(null)}>
+        <Pressable style={s.overlay} onPress={() => setPwTarget(null)}>
+          <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
+            <Display size={font.xl}>{t.admin.setPassword}</Display>
+            <Body muted size={font.sm}>{pwTarget?.name} · {pwTarget?.email}</Body>
+            <PasswordInput testID="admin-pw-input" style={s.sheetInput} value={pwValue} onChangeText={setPwValue} placeholder={t.auth.newPassword} autoFocus />
+            <Button title={t.admin.setPassword} onPress={savePassword} testID="admin-pw-save" />
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      <Modal visible={!!editTarget} transparent animationType="slide" onRequestClose={() => setEditTarget(null)}>
+        <Pressable style={s.overlay} onPress={() => setEditTarget(null)}>
+          <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
+            <Display size={font.xl}>{t.admin.editData}</Display>
+            <Body muted size={font.sm}>{editEmail}</Body>
+            <Body style={s.sheetLabel}>{t.auth.name}</Body>
+            <TextInput testID="admin-edit-name" style={s.sheetInput} value={editName} onChangeText={setEditName} placeholderTextColor={colors.muted} />
+            <Button title={t.common.save} onPress={saveEdit} testID="admin-edit-save" />
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -125,8 +195,12 @@ const useStyles = makeStyles((c) => ({
   content: { paddingHorizontal: spacing.lg, gap: spacing.md },
   statRow: { flexDirection: "row", gap: spacing.sm },
   userRow: { flexDirection: "row", alignItems: "center" },
-  userActions: { flexDirection: "row", gap: spacing.sm },
+  userActions: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
   auditRow: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   auditCount: { fontFamily: font.display, fontWeight: "700", fontSize: font.xl, color: c.onSurface },
   reportRow: { flexDirection: "row", justifyContent: "space-between", paddingVertical: 4 },
+  overlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", justifyContent: "flex-end" },
+  sheet: { backgroundColor: c.surfaceSecondary, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: spacing.xl, gap: spacing.md },
+  sheetLabel: { marginTop: spacing.xs, fontWeight: "600", color: c.onSurface, fontFamily: font.text },
+  sheetInput: { backgroundColor: c.surfaceTertiary, borderRadius: radius.md, paddingHorizontal: spacing.lg, height: 52, color: c.onSurface, fontSize: font.lg, fontFamily: font.text },
 }));

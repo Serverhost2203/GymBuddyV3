@@ -27,6 +27,12 @@ export const es: Dict = {
     login: "Iniciar sesión", register: "Crear cuenta", email: "Correo", password: "Contraseña",
     name: "Nombre", noAccount: "¿Sin cuenta?", haveAccount: "¿Ya tienes cuenta?",
     signUp: "Registrarse", signIn: "Entrar", logout: "Cerrar sesión",
+    forgotPassword: "¿Olvidaste tu contraseña?", resetTitle: "Restablecer contraseña",
+    resetIntro: "Introduce tu correo. Te enviaremos un código de 6 dígitos.",
+    sendCode: "Enviar código", codeSent: "Si existe una cuenta, se envió un código.",
+    code: "Código", newPassword: "Nueva contraseña", resetSubmit: "Cambiar contraseña",
+    backToLogin: "Volver al inicio de sesión", resetDone: "Contraseña cambiada. Sesión iniciada.",
+    invalidCode: "Código no válido o caducado.",
   },
   onboarding: {
     title: "Vamos a configurarte", nameQ: "¿Cómo te llamas?", genderQ: "Género",
@@ -136,6 +142,8 @@ export const es: Dict = {
     totalUsers: "Usuarios", totalExercises: "Ejercicios", totalWorkouts: "Entrenos",
     noImage: "Sin imagen", noDemo: "Sin demostración", invalidEquip: "Equipo inválido",
     missingTr: "Traducciones faltantes", duplicates: "Duplicados", onlyRootDemote: "Solo el admin raíz puede quitar permisos de admin.",
+    deleteUser: "Eliminar", deleteUserConfirm: "¿Eliminar permanentemente esta cuenta y TODOS los datos? No se puede deshacer.",
+    userDeleted: "Cuenta eliminada permanentemente.", setPassword: "Cambiar contraseña", passwordChanged: "Contraseña cambiada.", editData: "Editar datos",
   },
   subscription: {
     title: "Suscripción", freeTier: "Gratis", premiumTier: "Premium",

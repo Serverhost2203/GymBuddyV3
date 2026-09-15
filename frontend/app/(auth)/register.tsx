@@ -7,6 +7,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Body, Button, Display } from "@/src/components/ui";
+import { PasswordInput } from "@/src/components/PasswordInput";
 import { ApiError } from "@/src/api";
 import { useApp } from "@/src/context";
 import { font, makeStyles, radius, spacing, useTheme } from "@/src/theme";
@@ -55,7 +56,7 @@ export default function Register() {
         <TextInput testID="reg-email" style={s.input} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" placeholder="you@email.com" placeholderTextColor={colors.muted} />
 
         <Body style={s.label}>{t.auth.password}</Body>
-        <TextInput testID="reg-password" style={s.input} value={password} onChangeText={setPassword} secureTextEntry placeholder="min. 8 chars" placeholderTextColor={colors.muted} />
+        <PasswordInput testID="reg-password" style={s.input} value={password} onChangeText={setPassword} placeholder="min. 8 chars" />
 
         {error ? <Text style={s.error} testID="reg-error">{error}</Text> : null}
         <Button testID="reg-submit" title={t.auth.signUp} onPress={submit} loading={loading} style={{ marginTop: spacing.lg }} />

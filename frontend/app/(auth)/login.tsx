@@ -7,6 +7,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-controller";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { Body, Button, Display } from "@/src/components/ui";
+import { PasswordInput } from "@/src/components/PasswordInput";
 import { useApp } from "@/src/context";
 import { ApiError } from "@/src/api";
 import { font, makeStyles, radius, spacing, useTheme } from "@/src/theme";
@@ -51,8 +52,9 @@ export default function Login() {
           placeholderTextColor={colors.muted} />
 
         <Body style={s.label}>{t.auth.password}</Body>
-        <TextInput testID="login-password" style={s.input} value={password} onChangeText={setPassword}
-          secureTextEntry placeholder="••••••••" placeholderTextColor={colors.muted} />
+        <PasswordInput testID="login-password" style={s.input} value={password} onChangeText={setPassword} placeholder="••••••••" />
+
+        <Link href="/(auth)/forgot" testID="go-forgot" style={s.forgot}><Text style={s.link}>{t.auth.forgotPassword}</Text></Link>
 
         {error ? <Text style={s.error} testID="login-error">{error}</Text> : null}
 
@@ -75,6 +77,7 @@ const useStyles = makeStyles((c) => ({
   label: { marginTop: spacing.md, marginBottom: spacing.xs, fontWeight: "600" },
   input: { backgroundColor: c.surfaceSecondary, borderRadius: radius.md, paddingHorizontal: spacing.lg, height: 52, color: c.onSurface, fontSize: font.lg, borderWidth: 1, borderColor: c.border, fontFamily: font.text },
   error: { color: c.error, marginTop: spacing.md, fontFamily: font.text },
+  forgot: { alignSelf: "flex-end", marginTop: spacing.md },
   footer: { flexDirection: "row", justifyContent: "center", marginTop: spacing.xl },
   link: { color: c.brandPrimary, fontWeight: "700", fontFamily: font.text },
 }));

@@ -25,6 +25,12 @@ export const en = {
     login: "Log In", register: "Create Account", email: "Email", password: "Password",
     name: "Name", noAccount: "No account yet?", haveAccount: "Already have an account?",
     signUp: "Sign up", signIn: "Sign in", logout: "Log out",
+    forgotPassword: "Forgot password?", resetTitle: "Reset password",
+    resetIntro: "Enter your email. We'll send you a 6-digit reset code.",
+    sendCode: "Send code", codeSent: "If an account exists, a code was sent.",
+    code: "Code", newPassword: "New password", resetSubmit: "Change password",
+    backToLogin: "Back to login", resetDone: "Password changed. You're now signed in.",
+    invalidCode: "Invalid or expired code.",
   },
   onboarding: {
     title: "Let's set you up", nameQ: "What's your name?", genderQ: "Gender",
@@ -134,6 +140,8 @@ export const en = {
     totalUsers: "Users", totalExercises: "Exercises", totalWorkouts: "Workouts",
     noImage: "Without image", noDemo: "Without demonstration", invalidEquip: "Invalid equipment",
     missingTr: "Missing translations", duplicates: "Duplicates", onlyRootDemote: "Only the root admin can remove admin rights.",
+    deleteUser: "Delete", deleteUserConfirm: "Permanently delete this account and ALL data? This cannot be undone.",
+    userDeleted: "Account permanently deleted.", setPassword: "Change password", passwordChanged: "Password changed.", editData: "Edit data",
   },
   subscription: {
     title: "Subscription", freeTier: "Free", premiumTier: "Premium",

@@ -6,6 +6,7 @@ import re
 import time
 import uuid
 import logging
+import secrets
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -24,6 +25,7 @@ from exercise_data import (
 )
 from templates_data import TEMPLATES, GOALS, EXPERIENCE
 from exercise_media import EXERCISE_MEDIA
+from email_service import send_email, reset_code_email_html
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
@@ -52,6 +54,11 @@ def now_utc() -> datetime:
 
 def iso(dt: datetime) -> str:
     return dt.astimezone(timezone.utc).isoformat()
+
+
+def parse_iso(s: str) -> datetime:
+    dt = datetime.fromisoformat(s)
+    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
 def hash_pw(pw: str) -> str:
@@ -110,6 +117,12 @@ async def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
 async def require_admin(user: dict = Depends(get_current_user)) -> dict:
     if user.get("role") != "admin":
         raise HTTPException(403, "Admin access required")
+    return user
+
+
+async def require_root(user: dict = Depends(get_current_user)) -> dict:
+    if not user.get("root_admin"):
+        raise HTTPException(403, "Only the head admin can perform this action.")
     return user
 
 
@@ -175,6 +188,20 @@ class RegisterIn(BaseModel):
 class LoginIn(BaseModel):
     email: EmailStr
     password: str
+
+
+class ForgotPasswordIn(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordIn(BaseModel):
+    email: EmailStr
+    code: str = Field(min_length=6, max_length=6)
+    password: str = Field(min_length=8, max_length=72)
+
+
+class SetPasswordIn(BaseModel):
+    password: str = Field(min_length=8, max_length=72)
 
 
 class ProfileUpdate(BaseModel):
@@ -302,6 +329,66 @@ async def me(user: dict = Depends(get_current_user)):
     return public_user(user)
 
 
+@api.post("/auth/forgot-password")
+async def forgot_password(body: ForgotPasswordIn):
+    email = body.email.lower()
+    rate_limit("forgot:" + email, limit=4, window=300)
+    user = await db.users.find_one({"email": email, "deleted_at": None})
+    # Always return ok to avoid email enumeration.
+    if user and not user.get("root_admin"):
+        code = f"{secrets.randbelow(1000000):06d}"
+        await db.password_resets.update_one(
+            {"email": email},
+            {"$set": {"email": email, "code_hash": hash_pw(code),
+                      "expires_at": iso(now_utc() + timedelta(minutes=15)),
+                      "attempts": 0, "created_at": iso(now_utc())}},
+            upsert=True,
+        )
+        try:
+            await send_email(to=email, subject="Your GymBuddy password reset code",
+                             html=reset_code_email_html(user.get("name", "there"), code))
+        except HTTPException:
+            logger.error("reset email failed for %s", email)
+    elif user and user.get("root_admin"):
+        raise HTTPException(403, "The head admin password can only be changed while signed in.")
+    return {"ok": True}
+
+
+@api.post("/auth/reset-password")
+async def reset_password(body: ResetPasswordIn):
+    email = body.email.lower()
+    rate_limit("reset:" + email, limit=10, window=300)
+    rec = await db.password_resets.find_one({"email": email})
+    if not rec:
+        raise HTTPException(400, "Invalid or expired code.")
+    if parse_iso(rec["expires_at"]) < now_utc():
+        await db.password_resets.delete_one({"email": email})
+        raise HTTPException(400, "Invalid or expired code.")
+    if rec.get("attempts", 0) >= 5:
+        await db.password_resets.delete_one({"email": email})
+        raise HTTPException(429, "Too many attempts. Request a new code.")
+    if not verify_pw(body.code, rec["code_hash"]):
+        await db.password_resets.update_one({"email": email}, {"$inc": {"attempts": 1}})
+        raise HTTPException(400, "Invalid or expired code.")
+    user = await db.users.find_one({"email": email, "deleted_at": None})
+    if not user:
+        raise HTTPException(400, "Invalid or expired code.")
+    await db.users.update_one({"id": user["id"]}, {"$set": {"password_hash": hash_pw(body.password)}})
+    await db.password_resets.delete_one({"email": email})
+    return {"token": make_token(user["id"]), "user": public_user(user)}
+
+
+async def purge_user_data(uid: str) -> None:
+    """Permanently delete a user and ALL of their data (irreversible)."""
+    for coll in (db.sessions, db.plans, db.measurements, db.food_entries,
+                 db.food_favorites, db.custom_foods, db.gallery, db.posts, db.prs):
+        await coll.delete_many({"user_id": uid})
+    # remove this user's likes & comments from OTHER users' posts
+    await db.posts.update_many({}, {"$pull": {"likes": uid, "comments": {"user_id": uid}}})
+    await db.users.delete_one({"id": uid})
+
+
+
 # --------------------------------------------------------------------------- #
 # Profile / users
 # --------------------------------------------------------------------------- #
@@ -344,7 +431,7 @@ async def complete_onboarding(body: ProfileUpdate, user: dict = Depends(get_curr
 async def delete_account(user: dict = Depends(get_current_user)):
     if user.get("root_admin"):
         raise HTTPException(403, "The root admin account cannot be deleted.")
-    await db.users.update_one({"id": user["id"]}, {"$set": {"deleted_at": iso(now_utc())}})
+    await purge_user_data(user["id"])
     return {"ok": True}
 
 
@@ -1140,6 +1227,43 @@ async def admin_disable_user(uid: str, admin: dict = Depends(require_admin)):
     new_state = None if target.get("deleted_at") else iso(now_utc())
     await db.users.update_one({"id": uid}, {"$set": {"deleted_at": new_state}})
     return {"ok": True, "disabled": new_state is not None}
+
+
+@api.delete("/admin/users/{uid}")
+async def admin_delete_user(uid: str, admin: dict = Depends(require_root)):
+    target = await db.users.find_one({"id": uid})
+    if not target:
+        raise HTTPException(404, "User not found")
+    if target.get("root_admin"):
+        raise HTTPException(403, "The head admin account cannot be deleted.")
+    await purge_user_data(uid)
+    return {"ok": True}
+
+
+@api.post("/admin/users/{uid}/password")
+async def admin_set_password(uid: str, body: SetPasswordIn, admin: dict = Depends(require_root)):
+    target = await db.users.find_one({"id": uid})
+    if not target:
+        raise HTTPException(404, "User not found")
+    if target.get("root_admin") and target["id"] != admin["id"]:
+        raise HTTPException(403, "Cannot change another head admin's password.")
+    await db.users.update_one({"id": uid}, {"$set": {"password_hash": hash_pw(body.password)}})
+    return {"ok": True}
+
+
+@api.put("/admin/users/{uid}")
+async def admin_edit_user(uid: str, body: ProfileUpdate, admin: dict = Depends(require_root)):
+    target = await db.users.find_one({"id": uid})
+    if not target:
+        raise HTTPException(404, "User not found")
+    updates = {k: v for k, v in body.model_dump(exclude_none=True).items()}
+    if "equipment" in updates:
+        updates["equipment"] = _clean_equipment(updates["equipment"])
+    if updates:
+        await db.users.update_one({"id": uid}, {"$set": updates})
+    fresh = await db.users.find_one({"id": uid}, {"_id": 0, "password_hash": 0})
+    return fresh
+
 
 
 @api.get("/admin/audit")
