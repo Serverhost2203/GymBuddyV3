@@ -1,0 +1,198 @@
+{
+  "app_name": "GymBuddy",
+  "personality": "7 Dark-First Utility",
+  "personality_one_liner": "A high-performance, dark-mode-first command center for serious training, prioritizing glanceability, large athletic typography, and warm tactical accents.",
+  "color": {
+    "dark": {
+      "surface": "#0F1113",
+      "onSurface": "#F5F6F8",
+      "surfaceSecondary": "#1A1C20",
+      "onSurfaceSecondary": "#E2E4E9",
+      "surfaceTertiary": "#25282E",
+      "onSurfaceTertiary": "#D1D4DB",
+      "surfaceInverse": "#FFFFFF",
+      "onSurfaceInverse": "#0F1113",
+      "brand": "#FF5522",
+      "onBrand": "#FFFFFF",
+      "brandPrimary": "#FF5522",
+      "onBrandPrimary": "#FFFFFF",
+      "brandSecondary": "#FF7744",
+      "onBrandSecondary": "#1A0803",
+      "brandTertiary": "#331811",
+      "onBrandTertiary": "#FF8866",
+      "success": "#00E676",
+      "onSuccess": "#002B16",
+      "warning": "#FFB300",
+      "onWarning": "#332400",
+      "error": "#FF3B30",
+      "onError": "#330806",
+      "border": "#272A30",
+      "borderStrong": "#3B4048",
+      "divider": "#1A1C20",
+      "muted": "#8A919E"
+    },
+    "light": {
+      "surface": "#FFFFFF",
+      "onSurface": "#0F1113",
+      "surfaceSecondary": "#F4F5F8",
+      "onSurfaceSecondary": "#1A1C20",
+      "surfaceTertiary": "#EAECEF",
+      "onSurfaceTertiary": "#25282E",
+      "surfaceInverse": "#0F1113",
+      "onSurfaceInverse": "#FFFFFF",
+      "brand": "#FF5522",
+      "onBrand": "#FFFFFF",
+      "brandPrimary": "#FF4411",
+      "onBrandPrimary": "#FFFFFF",
+      "brandSecondary": "#FF6633",
+      "onBrandSecondary": "#FFFFFF",
+      "brandTertiary": "#FFF0EC",
+      "onBrandTertiary": "#CC3300",
+      "success": "#00C853",
+      "onSuccess": "#FFFFFF",
+      "warning": "#F57F17",
+      "onWarning": "#FFFFFF",
+      "error": "#D32F2F",
+      "onError": "#FFFFFF",
+      "border": "#E1E4E8",
+      "borderStrong": "#C2C7D0",
+      "divider": "#F4F5F8",
+      "muted": "#687078"
+    }
+  },
+  "typography": {
+    "displayFontFamily": "Rajdhani",
+    "textFontFamily": "Manrope",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24,
+      "3xl": 48,
+      "4xl": 64
+    }
+  },
+  "spacing": {
+    "rule": "Dense and athletic. Use tight spacing for metrics and stats to allow quick scanning, but generous safe-areas at the screen edges.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 16,
+    "pill": 999
+  },
+  "shadow_tier": "0",
+  "navigation": "bottom_tabs",
+  "icon_set": "Phosphor",
+  "glassmorphism": {
+    "enabled": "false",
+    "do's": [
+      "Use solid surfaceSecondary or border treatments for elevation, maintaining a sharp, tactical look without blur."
+    ],
+    "dont's": [
+      "No blur or glassmorphism. It conflicts with the high-performance Dark-First Utility personality."
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "solid surfaceSecondary",
+      "android": "solid surfaceSecondary",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "react-native-svg",
+    "blur": "none",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler",
+    "charts": "victory-native",
+    "drag_drop": "react-native-draggable-flatlist"
+  },
+  "screens": [
+    {
+      "name": "Dashboard",
+      "purpose": "Command center for today's training, featuring a weekly calendar strip, quick-start actions, and recent activity.",
+      "states": {
+        "loading": "Skeleton loader for activity cards, structural calendar strip remains visible.",
+        "empty": "Illustration of a gym bench with 'Start your first workout' primary CTA.",
+        "error": "Failed to load dashboard. 'Retry' ghost button."
+      },
+      "layout": "Top: Weekly calendar strip. Middle: 'Start Empty Workout' primary CTA sticky card + 'Today's Plan'. Bottom: Scrollable feed of recent workouts/gamification streaks. Use surfaceSecondary for cards, strict grids."
+    },
+    {
+      "name": "Onboarding",
+      "purpose": "14-step data collection flow for personalization, utilizing large sliders and progress rings.",
+      "states": {
+        "loading": "Button shows subtle inline spinner during save.",
+        "empty": "N/A",
+        "error": "Validation error text below input in error color."
+      },
+      "layout": "Top: Progress ring/bar. Middle: Tactile vertical sliders for height/weight, selectable equipment grids. Bottom: Sticky 'Next' button above home indicator."
+    },
+    {
+      "name": "Exercise Detail",
+      "purpose": "Deep dive into an exercise featuring a dynamic SVG muscle diagram and historical performance.",
+      "states": {
+        "loading": "Muscle diagram pulses gently; charts show skeleton lines.",
+        "empty": "No history yet. Show 'Log your first set' CTA.",
+        "error": "Failed to fetch exercise details."
+      },
+      "layout": "Top: Large internal SVG muscle diagram (Front & Back) highlighting primary muscles in brandPrimary and secondary in brandSecondary. Middle: Exercise video/instructions placeholder. Bottom: 1RM and Volume charts."
+    },
+    {
+      "name": "Active Workout",
+      "purpose": "Glanceable, high-contrast live tracking screen with giant numerals and rest timers.",
+      "states": {
+        "loading": "N/A",
+        "empty": "N/A",
+        "error": "N/A"
+      },
+      "layout": "Top: Current exercise and Up Next preview. Middle: Giant Rajdhani numerals for Rest Timer (use whole-screen dark red gradient for rest state). Bottom: List of sets with quick-add weight steppers and a swipe-to-complete or large tap-to-complete checkbox per set. Floating or sticky 'Finish Workout' action."
+    },
+    {
+      "name": "Progress",
+      "purpose": "Data visualization hub for body measurements, 1RM, volume, and gamification XP.",
+      "states": {
+        "loading": "Chart skeletons.",
+        "empty": "Placeholder charts with 'Log 3 workouts to unlock insights'.",
+        "error": "Data load failure banner."
+      },
+      "layout": "Top: Segmented controls (Time, Volume, Bodyweight). Middle: Interactive Victory charts with brand-tinted tooltips. Bottom: Grid of personal records and achievement badges."
+    },
+    {
+      "name": "Workout Builder",
+      "purpose": "Custom workout creation with drag-and-drop reordering.",
+      "states": {
+        "loading": "N/A",
+        "empty": "Add exercises to start building your plan.",
+        "error": "N/A"
+      },
+      "layout": "List of selected exercises using react-native-draggable-flatlist. Each row has a drag handle (Phosphor list icon). Sticky 'Save Plan' bottom CTA."
+    }
+  ],
+  "images": {
+    "onboarding_bg": {
+      "url": "https://images.unsplash.com/photo-1710438399422-2fca27686bcd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODB8MHwxfHNlYXJjaHwxfHxkYXJrJTIwYWJzdHJhY3QlMjBhdGhsZXRpYyUyMGJhY2tncm91bmQlMjB0ZXh0dXJlfGVufDB8fHx8MTc4OTQ5OTQ3M3ww&ixlib=rb-4.1.0&q=85",
+      "dark": "https://images.unsplash.com/photo-1710438399422-2fca27686bcd?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1ODB8MHwxfHNlYXJjaHwxfHxkYXJrJTIwYWJzdHJhY3QlMjBhdGhsZXRpYyUyMGJhY2tncm91bmQlMjB0ZXh0dXJlfGVufDB8fHx8MTc4OTQ5OTQ3M3ww&ixlib=rb-4.1.0&q=85",
+      "alt": "Dark abstract wavy mesh background for onboarding."
+    }
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the Dark-First Utility design logic. Use the dark theme as the primary, default appearance. The interface must feel like a tactical command center, not a standard minimal app.",
+    "No external images or 3D models for exercises. You MUST implement the muscle map and exercise visualizations using React Native SVG components built internally.",
+    "For the muscle diagram, structure the SVG with clear front/back anatomy paths and dynamically pass `brandPrimary` for primary muscles and `brandSecondary` for secondary muscles.",
+    "In the Active Workout timer screen, use Rajdhani for the timer at a massive size (64pt+). Use a full-screen dark red gradient (e.g., surfaceTertiary to brandTertiary) to clearly indicate a 'Rest' state from a distance.",
+    "Use react-native-draggable-flatlist for the Workout Builder to enable drag-and-drop reordering of exercises.",
+    "Ensure the UI elements (buttons, inputs, set-log checkboxes) have highly generous hit targets (min 48x48pt) since users will be interacting with them mid-workout with sweaty hands.",
+    "Build the progress charts using victory-native to provide professional, smooth, and interactive graph visualizations.",
+    "Implement whole-screen whole-theme variables so the user can optionally toggle light mode, but default absolutely everything to the dark tokens.",
+    "Haptics: Provide sharp tactile feedback on set completion, timer starts/stops, and drag-and-drop reordering."
+  ]
+}
