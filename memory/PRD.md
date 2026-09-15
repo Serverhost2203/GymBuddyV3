@@ -26,6 +26,10 @@ Build a complete, production-ready Android fitness app "GymBuddy" (React Native/
 
 ## Implemented (2026-06)
 
+### Update 5 — Full photo coverage + Instagram-style Explore
+- Photo coverage now 100% (1306/1306): 721 exact name+muscle matches + 585 representative photos (same muscle group). Detail screen labels representative photos ("Beispielfoto für diese Muskelgruppe"). Map in `exercise_media.py` includes `match: exact|representative`; backend exposes `photo_match`.
+- New EXPLORE screen (`/app/frontend/app/explore.tsx`): Instagram-style 3-column photo grid of public image posts with like/comment counts; tapping a tile opens the post (like + comment). Search bar toggles to a People results list (remount via distinct FlatList keys to avoid numColumns crash). Feed search button now routes to /explore; old user-search modal removed. Backend `GET /explore` returns public image posts.
+
 ### Update 4 — Real exercise photos
 - REAL execution PHOTOS from Free Exercise DB (public domain, jsDelivr CDN). 721/1306 exercises matched confidently by normalized name + primary-muscle compatibility. Map in `/app/backend/exercise_media.py` (id -> {images:[start,end]}). Backend adds `photos`/`photo_attribution` to `localize_exercise`.
 - Exercise detail: new "Execution" card auto-cycles start/end photos (GIF-like), tap to toggle manually, dots indicator; SVG muscle diagram + legend retained below as fallback for the ~585 unmatched exercises.

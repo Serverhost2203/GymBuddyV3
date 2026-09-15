@@ -59,7 +59,7 @@ export const en = {
     alternatives: "Alternatives", personalBest: "Personal best", history: "History",
     noHistory: "No history yet. Log your first set.", notAvailable: "Needs equipment you don't have",
     front: "Front", back: "Back", results: "results", noResults: "No exercises match your filters",
-    photos: "Execution", startPos: "Start", endPos: "End", photoDemo: "Tap to toggle start/end position", photoSource: "Photos: Free Exercise DB (public domain)",
+    photos: "Execution", startPos: "Start", endPos: "End", photoDemo: "Tap to toggle start/end position", photoSource: "Photos: Free Exercise DB (public domain)", photoRepresentative: "Representative photo for this muscle group",
   },
   plans: {
     title: "Plans", templates: "Templates", myPlans: "My Plans", generate: "Auto-Generate",
@@ -150,6 +150,7 @@ export const en = {
     profilePrivateNote: "This profile is private.", record: "Personal record", photo: "Photo",
     viewProfile: "View profile", workouts: "Workouts", deletePost: "Delete post", makePublicHint: "Set your profile public to appear in search & feed",
     editComment: "Edit comment", deleteComment: "Delete comment", deleteCommentConfirm: "Really delete this comment?", edited: "edited",
+    explore: "Explore", exploreEmpty: "No photos to explore yet. Be the first to share one!", people: "People", posts: "Posts",
   },
   gallery: {
     title: "Gallery", empty: "No photos yet.", add: "Add Photo", public: "Public", private: "Private",

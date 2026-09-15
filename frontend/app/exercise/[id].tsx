@@ -68,7 +68,7 @@ export default function ExerciseDetail() {
                   ))}
                 </View>
               ) : null}
-              <Body muted size={font.sm} style={{ marginTop: spacing.xs }}>{t.exercises.photoDemo}</Body>
+              <Body muted size={font.sm} style={{ marginTop: spacing.xs }}>{ex.photo_match === "representative" ? t.exercises.photoRepresentative : t.exercises.photoDemo}</Body>
               <Body muted size={11} style={{ marginTop: 2 }}>{t.exercises.photoSource}</Body>
             </Card>
           ) : null}

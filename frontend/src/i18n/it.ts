@@ -61,7 +61,7 @@ export const it: Dict = {
     alternatives: "Alternative", personalBest: "Record personale", history: "Cronologia",
     noHistory: "Nessuna cronologia. Registra la tua prima serie.", notAvailable: "Richiede attrezzatura che non hai",
     front: "Fronte", back: "Retro", results: "risultati", noResults: "Nessun esercizio corrisponde ai filtri",
-    photos: "Esecuzione", startPos: "Inizio", endPos: "Fine", photoDemo: "Tocca per alternare inizio/fine", photoSource: "Foto: Free Exercise DB (dominio pubblico)",
+    photos: "Esecuzione", startPos: "Inizio", endPos: "Fine", photoDemo: "Tocca per alternare inizio/fine", photoSource: "Foto: Free Exercise DB (dominio pubblico)", photoRepresentative: "Foto rappresentativa di questo gruppo muscolare",
   },
   plans: {
     title: "Piani", templates: "Modelli", myPlans: "I miei piani", generate: "Auto-genera",
@@ -152,6 +152,7 @@ export const it: Dict = {
     profilePrivateNote: "Questo profilo è privato.", record: "Record personale", photo: "Foto",
     viewProfile: "Vedi profilo", workouts: "Allenamenti", deletePost: "Elimina post", makePublicHint: "Rendi pubblico il profilo per apparire in ricerca e feed",
     editComment: "Modifica commento", deleteComment: "Elimina commento", deleteCommentConfirm: "Eliminare questo commento?", edited: "modificato",
+    explore: "Esplora", exploreEmpty: "Ancora nessuna foto da esplorare. Sii il primo a condividerne una!", people: "Persone", posts: "Post",
   },
   gallery: {
     title: "Galleria", empty: "Ancora nessuna foto.", add: "Aggiungi foto", public: "Pubblico", private: "Privato",

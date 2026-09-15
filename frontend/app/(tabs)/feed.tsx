@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
@@ -24,15 +24,12 @@ export default function Feed() {
   const [text, setText] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const [isRecord, setIsRecord] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [q, setQ] = useState("");
 
   const feed = useInfiniteQuery({
     queryKey: ["feed"], initialPageParam: 0,
     queryFn: ({ pageParam }) => api.get("/feed", { offset: pageParam, limit: 20 }),
     getNextPageParam: (last: any, pages) => (last.items.length === 20 ? pages.length * 20 : undefined),
   });
-  const search = useQuery({ queryKey: ["user-search", q], queryFn: () => api.get("/users/search", { q }), enabled: searchOpen && q.length > 1 });
 
   const items = feed.data?.pages.flatMap((p: any) => p.items) ?? [];
 
@@ -59,7 +56,7 @@ export default function Feed() {
       <View style={[s.header, { paddingTop: insets.top + spacing.md }]}>
         <Display size={font["2xl"]}>{t.feed.title}</Display>
         <View style={s.headerBtns}>
-          <Pressable onPress={() => setSearchOpen(true)} hitSlop={10} testID="feed-search-btn"><MagnifyingGlass color={colors.onSurface} size={24} /></Pressable>
+          <Pressable onPress={() => router.push("/explore")} hitSlop={10} testID="feed-search-btn"><MagnifyingGlass color={colors.onSurface} size={24} /></Pressable>
           <Pressable onPress={() => setCompose(true)} hitSlop={10} style={s.newBtn} testID="feed-new-post"><Plus color={colors.onBrandPrimary} size={20} weight="bold" /></Pressable>
         </View>
       </View>
@@ -117,26 +114,6 @@ export default function Feed() {
             </View>
             {!user?.privacy?.profile_public ? <Body muted size={font.sm}>{t.feed.makePublicHint}</Body> : null}
             <Button title={t.feed.post} onPress={submit} testID="post-submit" />
-          </Pressable>
-        </Pressable>
-      </Modal>
-
-      {/* Search */}
-      <Modal visible={searchOpen} transparent animationType="slide" onRequestClose={() => setSearchOpen(false)}>
-        <Pressable style={s.overlay} onPress={() => setSearchOpen(false)}>
-          <Pressable style={s.sheet} onPress={(e) => e.stopPropagation()}>
-            <Display size={font.xl}>{t.feed.searchUsers}</Display>
-            <View style={s.searchBox}>
-              <MagnifyingGlass color={colors.muted} size={18} />
-              <TextInput style={s.searchInput} value={q} onChangeText={setQ} placeholder={t.feed.searchUsers} placeholderTextColor={colors.muted} autoFocus testID="user-search-input" />
-            </View>
-            {(search.data?.items ?? []).map((u: any) => (
-              <Pressable key={u.id} style={s.userRow} onPress={() => { setSearchOpen(false); router.push(`/profile/${u.id}`); }} testID={`search-user-${u.id}`}>
-                <View style={s.avatar}>{u.avatar ? <Image source={{ uri: u.avatar }} style={s.avatarImg} /> : <UserIcon color={colors.muted} size={18} weight="fill" />}</View>
-                <View style={{ flex: 1 }}><Body style={{ fontWeight: "700" }}>{u.name}</Body><Body muted size={font.sm}>{t.gamification.level} {u.level}</Body></View>
-              </Pressable>
-            ))}
-            {q.length > 1 && (search.data?.items ?? []).length === 0 && !search.isLoading ? <Body muted>{t.errors.empty}</Body> : null}
           </Pressable>
         </Pressable>
       </Modal>

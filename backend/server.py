@@ -156,6 +156,7 @@ def localize_exercise(ex: dict, lang: str) -> dict:
         "has_image": ex.get("has_image", True),
         "has_animation": ex.get("has_animation", False),
         "photos": media["images"] if media else [],
+        "photo_match": media.get("match", "") if media else "",
         "photo_attribution": "Free Exercise DB (public domain)" if media else "",
         "media_attribution": ex.get("media_attribution", ""),
         "alternatives": ex.get("alternatives", []),
@@ -1330,6 +1331,18 @@ async def feed(offset: int = 0, limit: int = 20, user: dict = Depends(get_curren
             cache[p["user_id"]] = await _author_card(p["user_id"])
         out.append(_post_public(p, user["id"], cache[p["user_id"]]))
     return {"items": out}
+
+
+@api.get("/explore")
+async def explore(offset: int = 0, limit: int = 30, user: dict = Depends(get_current_user)):
+    # Instagram-style explore: public image posts from users with public profiles
+    public_ids = [u["id"] async for u in db.users.find({"privacy.profile_public": True, "deleted_at": None}, {"id": 1})]
+    cursor = db.posts.find(
+        {"visibility": "public", "deleted_at": None, "user_id": {"$in": public_ids}, "image": {"$ne": None}},
+        {"_id": 0}).sort("created_at", -1).skip(offset).limit(limit)
+    posts = await cursor.to_list(limit)
+    return {"items": [{"id": p["id"], "image": p.get("image"),
+                       "likes": len(p.get("likes", [])), "comments": len(p.get("comments", []))} for p in posts]}
 
 
 @api.get("/posts/{pid}")
