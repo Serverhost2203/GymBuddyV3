@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.emergent.exercisesystemtest.d8aoor",
+      "bundleIdentifier": "com.emergent.fitjourneyapp.hny3xq",
       "infoPlist": {
         "NSCameraUsageDescription": "Scan food barcodes to log nutrition",
         "NSPhotoLibraryUsageDescription": "Set your profile and progress photos"
@@ -20,8 +20,12 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0F1113"
       },
-      "package": "com.emergent.exercisesystemtest.d8aoor",
-      "permissions": ["android.permission.CAMERA", "android.permission.READ_MEDIA_IMAGES"]
+      "package": "com.emergent.fitjourneyapp.hny3xq",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -59,6 +63,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ecc32c1c-7ed5-4893-9417-a18915f7af25"
+      }
+    },
+    "owner": "gymbuddy22"
   }
 }
