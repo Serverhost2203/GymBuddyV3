@@ -117,7 +117,7 @@ export const fr: Dict = {
     subscription: "Abonnement", exportData: "Exporter mes données", deleteAccount: "Supprimer le compte",
     deleteConfirm: "Supprimer définitivement votre compte ? Action irréversible.",
     admin: "Tableau d'administration", account: "Compte", equipmentDays: "Équipement & jours",
-    profilePublic: "Profil public", shareWorkouts: "Partager les séances",
+    profilePublic: "Profil public", shareWorkouts: "Partager les séances", profileVisibility: "Visibilité du profil", friendsOnly: "Amis",
     notifyWorkouts: "Rappels de séance", notifyWeight: "Suivi du poids",
     notifyMeasurements: "Rappels de mesures", notifyStreak: "Rappels de série",
     free: "Gratuit", premium: "Premium", upgradeToPremium: "Passer à Premium",
@@ -161,6 +161,14 @@ export const fr: Dict = {
     viewProfile: "Voir le profil", workouts: "Séances", deletePost: "Supprimer la publication", makePublicHint: "Rendez votre profil public pour apparaître dans la recherche et le fil",
     editComment: "Modifier le commentaire", deleteComment: "Supprimer le commentaire", deleteCommentConfirm: "Supprimer ce commentaire ?", edited: "modifié",
     explore: "Explorer", exploreEmpty: "Aucune photo à explorer. Soyez le premier à en partager une !", people: "Personnes", posts: "Publications",
+    scopePublic: "Public", scopeFriends: "Amis", postVisibility: "Qui peut voir ceci ?",
+  },
+  friends: {
+    addFriend: "Ajouter", requestSent: "Demande envoyée", pending: "En attente", accept: "Accepter", decline: "Refuser",
+    friends: "Amis", friendsList: "Amis", requests: "Demandes",
+  },
+  notifications: {
+    title: "Notifications", empty: "Aucune notification.", sentRequest: "vous a envoyé une demande d'ami.", acceptedRequest: "a accepté votre demande d'ami.",
   },
   gallery: {
     title: "Galerie", empty: "Aucune photo.", add: "Ajouter une photo", public: "Public", private: "Privé",

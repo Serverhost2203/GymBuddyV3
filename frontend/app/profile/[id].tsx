@@ -1,12 +1,12 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
-import { CaretLeft, Trophy, User as UserIcon } from "phosphor-react-native";
+import { CaretLeft, Check, Clock, Trophy, UserMinus, UserPlus, User as UserIcon } from "phosphor-react-native";
 import { ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api, ApiError } from "@/src/api";
-import { Body, Card, Display, EmptyState, Skeleton, StatCard } from "@/src/components/ui";
+import { Body, Button, Card, Display, EmptyState, Skeleton, StatCard, useToast } from "@/src/components/ui";
 import { useApp } from "@/src/context";
 import { font, makeStyles, radius, spacing, useTheme } from "@/src/theme";
 
@@ -15,12 +15,36 @@ export default function PublicProfile() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const qc = useQueryClient();
+  const toast = useToast();
   const s = useStyles();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const q = useQuery({ queryKey: ["profile", id], queryFn: () => api.get(`/users/${id}/profile`), retry: false });
+  const status = useQuery({ queryKey: ["friend-status", id], queryFn: () => api.get(`/friends/status/${id}`) });
   const isPrivate = q.error instanceof ApiError && q.error.status === 403;
   const p = q.data;
+  const rel = status.data?.status ?? "none";
+
+  const addFriend = useMutation({
+    mutationFn: () => api.post("/friends/request", { user_id: id }),
+    onSuccess: () => { status.refetch(); toast.show(t.friends.requestSent, "success"); },
+  });
+  const accept = useMutation({
+    mutationFn: () => api.post(`/friends/${status.data?.request_id}/accept`, {}),
+    onSuccess: () => { status.refetch(); q.refetch(); qc.invalidateQueries({ queryKey: ["notif-unread"] }); },
+  });
+  const unfriend = useMutation({
+    mutationFn: () => api.del(`/friends/${id}`),
+    onSuccess: () => { status.refetch(); q.refetch(); },
+  });
+
+  const FriendButton = () => {
+    if (rel === "friends") return <Button title={t.friends.friends} small variant="secondary" onPress={() => unfriend.mutate()} testID="pp-unfriend" icon={<UserMinus color={colors.onSurface} size={16} />} />;
+    if (rel === "outgoing") return <Button title={t.friends.pending} small variant="ghost" onPress={() => unfriend.mutate()} testID="pp-cancel" icon={<Clock color={colors.brandPrimary} size={16} />} />;
+    if (rel === "incoming") return <Button title={t.friends.accept} small onPress={() => accept.mutate()} testID="pp-accept" icon={<Check color={colors.onBrandPrimary} size={16} weight="bold" />} />;
+    return <Button title={t.friends.addFriend} small onPress={() => addFriend.mutate()} testID="pp-add" icon={<UserPlus color={colors.onBrandPrimary} size={16} weight="fill" />} />;
+  };
 
   return (
     <View style={s.root}>
@@ -30,7 +54,10 @@ export default function PublicProfile() {
         <Display size={font.lg}>{t.feed.publicProfile}</Display>
       </View>
       {isPrivate ? (
-        <EmptyState icon={<UserIcon color={colors.muted} size={44} weight="fill" />} title={t.feed.privateProfile} subtitle={t.feed.profilePrivateNote} testID="pp-private" />
+        <View style={{ padding: spacing.lg, gap: spacing.lg, alignItems: "center" }}>
+          <EmptyState icon={<UserIcon color={colors.muted} size={44} weight="fill" />} title={t.feed.privateProfile} subtitle={t.feed.profilePrivateNote} testID="pp-private" />
+          {rel !== "self" ? <FriendButton /> : null}
+        </View>
       ) : q.isLoading || !p ? (
         <View style={{ padding: spacing.lg }}><Skeleton height={140} /></View>
       ) : (
@@ -38,6 +65,7 @@ export default function PublicProfile() {
           <View style={s.headerCard}>
             <View style={s.avatar}>{p.avatar ? <Image source={{ uri: p.avatar }} style={s.avatarImg} contentFit="cover" /> : <UserIcon color={colors.muted} size={34} weight="fill" />}</View>
             <Display size={font.xl}>{p.name}</Display>
+            {!p.is_self ? <FriendButton /> : null}
           </View>
           <View style={s.statRow}>
             <StatCard label={t.gamification.level} value={String(p.level)} accent />

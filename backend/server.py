@@ -388,6 +388,9 @@ async def purge_user_data(uid: str) -> None:
         await coll.delete_many({"user_id": uid})
     # remove this user's likes & comments from OTHER users' posts
     await db.posts.update_many({}, {"$pull": {"likes": uid, "comments": {"user_id": uid}}})
+    # friendships & notifications touching this user
+    await db.friendships.delete_many({"$or": [{"requester_id": uid}, {"addressee_id": uid}]})
+    await db.notifications.delete_many({"$or": [{"user_id": uid}, {"actor_id": uid}]})
     await db.users.delete_one({"id": uid})
 
 
@@ -407,6 +410,13 @@ async def update_profile(body: ProfileUpdate, user: dict = Depends(get_current_u
     updates = {k: v for k, v in body.model_dump(exclude_none=True).items()}
     if "equipment" in updates:
         updates["equipment"] = _clean_equipment(updates["equipment"])
+    if "privacy" in updates and isinstance(updates["privacy"], dict):
+        priv = {**(user.get("privacy") or {}), **updates["privacy"]}
+        if "profile_visibility" in updates["privacy"]:
+            v = updates["privacy"]["profile_visibility"]
+            priv["profile_visibility"] = v if v in ("public", "friends", "private") else "private"
+            priv["profile_public"] = priv["profile_visibility"] == "public"
+        updates["privacy"] = priv
     if updates:
         await db.users.update_one({"id": user["id"]}, {"$set": updates})
     fresh = await db.users.find_one({"id": user["id"]})
@@ -1430,9 +1440,35 @@ async def _author_card(uid: str) -> dict:
             "level": u.get("level", 1), "public": bool((u.get("privacy") or {}).get("profile_public"))}
 
 
+async def are_friends(a: str, b: str) -> bool:
+    if a == b:
+        return True
+    return bool(await db.friendships.find_one({"status": "accepted", "$or": [
+        {"requester_id": a, "addressee_id": b}, {"requester_id": b, "addressee_id": a}]}))
+
+
+async def friend_ids(uid: str) -> List[str]:
+    fs = await db.friendships.find({"status": "accepted", "$or": [
+        {"requester_id": uid}, {"addressee_id": uid}]}).to_list(2000)
+    return [f["addressee_id"] if f["requester_id"] == uid else f["requester_id"] for f in fs]
+
+
+async def notify(user_id: str, ntype: str, actor_id: str, extra: Optional[dict] = None) -> None:
+    if user_id == actor_id:
+        return
+    await db.notifications.insert_one({"id": str(uuid.uuid4()), "user_id": user_id, "type": ntype,
+                                       "actor_id": actor_id, "read": False, "created_at": iso(now_utc()),
+                                       **(extra or {})})
+
+
+def _norm_vis(v: str) -> str:
+    return v if v in ("public", "friends", "private") else "private"
+
+
 def _post_public(p: dict, me: str, author: dict) -> dict:
     return {"id": p["id"], "text": p.get("text", ""), "image": p.get("image"),
             "type": p.get("type", "text"), "record": p.get("record"),
+            "visibility": p.get("visibility", "public"),
             "created_at": p.get("created_at"), "author": author,
             "likes": len(p.get("likes", [])), "liked": me in p.get("likes", []),
             "comments": len(p.get("comments", []))}
@@ -1442,17 +1478,21 @@ def _post_public(p: dict, me: str, author: dict) -> dict:
 async def create_post(body: PostIn, user: dict = Depends(get_current_user)):
     p = {"id": str(uuid.uuid4()), "user_id": user["id"], "text": body.text.strip()[:1000],
          "image": body.image, "type": body.type, "record": body.record,
-         "visibility": "public" if body.visibility == "public" else "private",
+         "visibility": _norm_vis(body.visibility),
          "likes": [], "comments": [], "created_at": iso(now_utc()), "deleted_at": None}
     await db.posts.insert_one(dict(p))
     return _post_public(p, user["id"], await _author_card(user["id"]))
 
 
 @api.get("/feed")
-async def feed(offset: int = 0, limit: int = 20, user: dict = Depends(get_current_user)):
-    # public posts only, and only from users with a public profile
-    public_ids = [u["id"] async for u in db.users.find({"privacy.profile_public": True, "deleted_at": None}, {"id": 1})]
-    cursor = db.posts.find({"visibility": "public", "deleted_at": None, "user_id": {"$in": public_ids}}, {"_id": 0}).sort("created_at", -1).skip(offset).limit(limit)
+async def feed(offset: int = 0, limit: int = 20, scope: str = "public", user: dict = Depends(get_current_user)):
+    if scope == "friends":
+        fids = await friend_ids(user["id"])
+        query = {"deleted_at": None, "user_id": {"$in": fids}, "visibility": {"$in": ["public", "friends"]}}
+    else:
+        public_ids = [u["id"] async for u in db.users.find({"privacy.profile_public": True, "deleted_at": None}, {"id": 1})]
+        query = {"visibility": "public", "deleted_at": None, "user_id": {"$in": public_ids}}
+    cursor = db.posts.find(query, {"_id": 0}).sort("created_at", -1).skip(offset).limit(limit)
     posts = await cursor.to_list(limit)
     out = []
     cache: Dict[str, dict] = {}
@@ -1481,8 +1521,12 @@ async def get_post(pid: str, user: dict = Depends(get_current_user)):
     if not p:
         raise HTTPException(404, "Post not found")
     author = await _author_card(p["user_id"])
-    if p.get("visibility") != "public" and p["user_id"] != user["id"]:
-        raise HTTPException(403, "Private post")
+    vis = p.get("visibility", "public")
+    if p["user_id"] != user["id"]:
+        if vis == "private":
+            raise HTTPException(403, "Private post")
+        if vis == "friends" and not await are_friends(user["id"], p["user_id"]):
+            raise HTTPException(403, "Friends only")
     data = _post_public(p, user["id"], author)
     comments = []
     for c in p.get("comments", []):
@@ -1570,12 +1614,16 @@ async def my_posts(user: dict = Depends(get_current_user)):
 async def search_users(q: str = "", user: dict = Depends(get_current_user)):
     if not q.strip():
         return {"items": []}
-    # ONLY public profiles are searchable
+    # All users are findable by name (for friend requests); privacy enforced on profile view.
     rx = {"$regex": re.escape(q.strip()), "$options": "i"}
     users = await db.users.find(
-        {"privacy.profile_public": True, "deleted_at": None, "name": rx}, {"_id": 0}).limit(30).to_list(30)
+        {"deleted_at": None, "name": rx, "id": {"$ne": user["id"]}}, {"_id": 0}).limit(30).to_list(30)
+    my_friends = set(await friend_ids(user["id"]))
     return {"items": [{"id": u["id"], "name": u["name"], "avatar": u.get("avatar"),
-                       "level": u.get("level", 1), "best_streak": u.get("best_streak", 0)} for u in users]}
+                       "level": u.get("level", 1), "best_streak": u.get("best_streak", 0),
+                       "visibility": (u.get("privacy") or {}).get("profile_visibility",
+                                     "public" if (u.get("privacy") or {}).get("profile_public") else "private"),
+                       "is_friend": u["id"] in my_friends} for u in users]}
 
 
 @api.get("/users/{uid}/profile")
@@ -1584,17 +1632,139 @@ async def public_profile(uid: str, user: dict = Depends(get_current_user)):
     if not u:
         raise HTTPException(404, "User not found")
     is_self = uid == user["id"]
-    if not (u.get("privacy") or {}).get("profile_public") and not is_self:
-        raise HTTPException(403, "This profile is private")
+    priv = u.get("privacy") or {}
+    vis = priv.get("profile_visibility", "public" if priv.get("profile_public") else "private")
+    friends = is_self or await are_friends(user["id"], uid)
+    if not is_self:
+        if vis == "private":
+            raise HTTPException(403, "This profile is private")
+        if vis == "friends" and not friends:
+            raise HTTPException(403, "This profile is visible to friends only")
     workouts = await db.sessions.count_documents({"user_id": uid, "status": "completed"})
-    posts = await db.posts.find({"user_id": uid, "visibility": "public", "deleted_at": None}, {"_id": 0}).sort("created_at", -1).to_list(50)
-    photos = await db.gallery.find({"user_id": uid, "visibility": "public", "deleted_at": None}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    # friends see public+friends posts/photos; others only public
+    allowed_vis = ["public", "friends"] if friends else ["public"]
+    posts = await db.posts.find({"user_id": uid, "visibility": {"$in": allowed_vis}, "deleted_at": None}, {"_id": 0}).sort("created_at", -1).to_list(50)
+    photos = await db.gallery.find({"user_id": uid, "visibility": {"$in": allowed_vis}, "deleted_at": None}, {"_id": 0}).sort("created_at", -1).to_list(50)
     author = await _author_card(uid)
-    # Never expose weight, measurements, target, private photos
+    rel = await friend_status(uid, user["id"]) if not is_self else {"status": "self"}
     return {"id": uid, "name": u["name"], "avatar": u.get("avatar"), "level": u.get("level", 1),
             "xp": u.get("xp", 0), "best_streak": u.get("best_streak", 0), "total_workouts": workouts,
-            "is_self": is_self, "posts": [_post_public(p, user["id"], author) for p in posts],
-            "photos": photos}
+            "is_self": is_self, "is_friend": friends and not is_self, "relationship": rel,
+            "posts": [_post_public(p, user["id"], author) for p in posts], "photos": photos}
+
+
+# --------------------------------------------------------------------------- #
+# Friends & notifications
+# --------------------------------------------------------------------------- #
+class FriendReqIn(BaseModel):
+    user_id: str
+
+
+async def friend_status(other: str, me: str) -> dict:
+    if await are_friends(me, other):
+        return {"status": "friends"}
+    fr = await db.friendships.find_one({"status": "pending", "$or": [
+        {"requester_id": me, "addressee_id": other}, {"requester_id": other, "addressee_id": me}]})
+    if not fr:
+        return {"status": "none"}
+    if fr["requester_id"] == me:
+        return {"status": "outgoing", "request_id": fr["id"]}
+    return {"status": "incoming", "request_id": fr["id"]}
+
+
+@api.post("/friends/request")
+async def send_friend_request(body: FriendReqIn, user: dict = Depends(get_current_user)):
+    target = await db.users.find_one({"id": body.user_id, "deleted_at": None})
+    if not target:
+        raise HTTPException(404, "User not found")
+    if body.user_id == user["id"]:
+        raise HTTPException(400, "Cannot add yourself")
+    if await are_friends(user["id"], body.user_id):
+        return {"status": "friends"}
+    existing = await db.friendships.find_one({"status": "pending", "$or": [
+        {"requester_id": user["id"], "addressee_id": body.user_id},
+        {"requester_id": body.user_id, "addressee_id": user["id"]}]})
+    if existing:
+        # if they already requested me, accept it
+        if existing["requester_id"] == body.user_id:
+            await db.friendships.update_one({"id": existing["id"]}, {"$set": {"status": "accepted", "accepted_at": iso(now_utc())}})
+            await notify(body.user_id, "friend_accept", user["id"])
+            return {"status": "friends"}
+        return {"status": "outgoing", "request_id": existing["id"]}
+    fid = str(uuid.uuid4())
+    await db.friendships.insert_one({"id": fid, "requester_id": user["id"], "addressee_id": body.user_id,
+                                     "status": "pending", "created_at": iso(now_utc())})
+    await notify(body.user_id, "friend_request", user["id"], {"request_id": fid})
+    return {"status": "outgoing", "request_id": fid}
+
+
+@api.post("/friends/{fid}/accept")
+async def accept_friend(fid: str, user: dict = Depends(get_current_user)):
+    fr = await db.friendships.find_one({"id": fid})
+    if not fr or fr["addressee_id"] != user["id"] or fr["status"] != "pending":
+        raise HTTPException(404, "Request not found")
+    await db.friendships.update_one({"id": fid}, {"$set": {"status": "accepted", "accepted_at": iso(now_utc())}})
+    await notify(fr["requester_id"], "friend_accept", user["id"])
+    # mark the originating notification read
+    await db.notifications.update_many({"request_id": fid}, {"$set": {"read": True}})
+    return {"ok": True, "status": "friends"}
+
+
+@api.post("/friends/{fid}/decline")
+async def decline_friend(fid: str, user: dict = Depends(get_current_user)):
+    fr = await db.friendships.find_one({"id": fid})
+    if not fr or fr["addressee_id"] != user["id"]:
+        raise HTTPException(404, "Request not found")
+    await db.friendships.delete_one({"id": fid})
+    await db.notifications.update_many({"request_id": fid}, {"$set": {"read": True}})
+    return {"ok": True}
+
+
+@api.delete("/friends/{uid}")
+async def remove_friend(uid: str, user: dict = Depends(get_current_user)):
+    await db.friendships.delete_many({"$or": [
+        {"requester_id": user["id"], "addressee_id": uid},
+        {"requester_id": uid, "addressee_id": user["id"]}]})
+    return {"ok": True}
+
+
+@api.get("/friends")
+async def list_friends(user: dict = Depends(get_current_user)):
+    ids = await friend_ids(user["id"])
+    return {"items": [await _author_card(i) for i in ids]}
+
+
+@api.get("/friends/requests")
+async def list_friend_requests(user: dict = Depends(get_current_user)):
+    reqs = await db.friendships.find({"addressee_id": user["id"], "status": "pending"}).sort("created_at", -1).to_list(100)
+    return {"items": [{"request_id": r["id"], "user": await _author_card(r["requester_id"]),
+                       "created_at": r["created_at"]} for r in reqs]}
+
+
+@api.get("/friends/status/{uid}")
+async def get_friend_status(uid: str, user: dict = Depends(get_current_user)):
+    return await friend_status(uid, user["id"])
+
+
+@api.get("/notifications")
+async def list_notifications(user: dict = Depends(get_current_user)):
+    items = await db.notifications.find({"user_id": user["id"]}, {"_id": 0}).sort("created_at", -1).limit(50).to_list(50)
+    out = []
+    for n in items:
+        out.append({**n, "actor": await _author_card(n["actor_id"])})
+    return {"items": out}
+
+
+@api.get("/notifications/unread_count")
+async def unread_count(user: dict = Depends(get_current_user)):
+    c = await db.notifications.count_documents({"user_id": user["id"], "read": False})
+    return {"count": c}
+
+
+@api.post("/notifications/read")
+async def mark_notifications_read(user: dict = Depends(get_current_user)):
+    await db.notifications.update_many({"user_id": user["id"], "read": False}, {"$set": {"read": True}})
+    return {"ok": True}
 
 
 @api.get("/")

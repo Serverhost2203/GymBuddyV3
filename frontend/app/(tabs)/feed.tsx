@@ -1,14 +1,14 @@
-import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { ChatCircle, Heart, MagnifyingGlass, Plus, Trophy, User as UserIcon } from "phosphor-react-native";
+import { Bell, ChatCircle, Heart, MagnifyingGlass, Plus, Trophy, User as UserIcon } from "phosphor-react-native";
 import { useState } from "react";
 import { FlatList, Modal, Pressable, Switch, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "@/src/api";
-import { Body, Button, Card, Display, EmptyState, Skeleton, useToast } from "@/src/components/ui";
+import { Body, Button, Card, Display, EmptyState, Segmented, Skeleton, useToast } from "@/src/components/ui";
 import { useApp } from "@/src/context";
 import { font, makeStyles, radius, spacing, useTheme } from "@/src/theme";
 
@@ -24,12 +24,15 @@ export default function Feed() {
   const [text, setText] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const [isRecord, setIsRecord] = useState(false);
+  const [visibility, setVisibility] = useState("public");
+  const [scope, setScope] = useState("public");
 
   const feed = useInfiniteQuery({
-    queryKey: ["feed"], initialPageParam: 0,
-    queryFn: ({ pageParam }) => api.get("/feed", { offset: pageParam, limit: 20 }),
+    queryKey: ["feed", scope], initialPageParam: 0,
+    queryFn: ({ pageParam }) => api.get("/feed", { offset: pageParam, limit: 20, scope }),
     getNextPageParam: (last: any, pages) => (last.items.length === 20 ? pages.length * 20 : undefined),
   });
+  const unread = useQuery({ queryKey: ["notif-unread"], queryFn: () => api.get("/notifications/unread_count"), refetchInterval: 20000 });
 
   const items = feed.data?.pages.flatMap((p: any) => p.items) ?? [];
 
@@ -42,11 +45,10 @@ export default function Feed() {
 
   const submit = async () => {
     if (!text.trim() && !image) return;
-    await api.post("/posts", { text, image, type: isRecord ? "record" : image ? "photo" : "text", visibility: "public" });
-    setText(""); setImage(null); setIsRecord(false); setCompose(false);
+    await api.post("/posts", { text, image, type: isRecord ? "record" : image ? "photo" : "text", visibility });
+    setText(""); setImage(null); setIsRecord(false); setVisibility("public"); setCompose(false);
     await qc.invalidateQueries({ queryKey: ["feed"] });
-    if (!user?.privacy?.profile_public) toast.show(t.feed.makePublicHint, "info");
-    else toast.show(t.feed.post, "success");
+    toast.show(t.feed.post, "success");
   };
 
   const like = async (id: string) => { await api.post(`/posts/${id}/like`, {}); await qc.invalidateQueries({ queryKey: ["feed"] }); };
@@ -56,9 +58,17 @@ export default function Feed() {
       <View style={[s.header, { paddingTop: insets.top + spacing.md }]}>
         <Display size={font["2xl"]}>{t.feed.title}</Display>
         <View style={s.headerBtns}>
+          <Pressable onPress={() => router.push("/notifications")} hitSlop={10} testID="feed-notif-btn">
+            <Bell color={colors.onSurface} size={24} />
+            {(unread.data?.count ?? 0) > 0 ? <View style={s.badge}><Text style={s.badgeText}>{unread.data.count > 9 ? "9+" : unread.data.count}</Text></View> : null}
+          </Pressable>
           <Pressable onPress={() => router.push("/explore")} hitSlop={10} testID="feed-search-btn"><MagnifyingGlass color={colors.onSurface} size={24} /></Pressable>
           <Pressable onPress={() => setCompose(true)} hitSlop={10} style={s.newBtn} testID="feed-new-post"><Plus color={colors.onBrandPrimary} size={20} weight="bold" /></Pressable>
         </View>
+      </View>
+      <View style={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.md }}>
+        <Segmented value={scope} onChange={setScope} testID="feed-scope"
+          options={[{ key: "public", label: t.feed.scopePublic }, { key: "friends", label: t.feed.scopeFriends }]} />
       </View>
 
       {feed.isLoading ? <View style={{ padding: spacing.lg, gap: spacing.md }}>{[1, 2, 3].map((i) => <Skeleton key={i} height={120} />)}</View> : (
@@ -113,6 +123,9 @@ export default function Feed() {
               </View>
             </View>
             {!user?.privacy?.profile_public ? <Body muted size={font.sm}>{t.feed.makePublicHint}</Body> : null}
+            <Body style={{ fontWeight: "700" }} size={font.sm}>{t.feed.postVisibility}</Body>
+            <Segmented value={visibility} onChange={setVisibility} testID="post-visibility"
+              options={[{ key: "public", label: t.gallery.public }, { key: "friends", label: t.profile.friendsOnly }, { key: "private", label: t.gallery.private }]} />
             <Button title={t.feed.post} onPress={submit} testID="post-submit" />
           </Pressable>
         </Pressable>
@@ -126,6 +139,8 @@ const useStyles = makeStyles((c) => ({
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: spacing.lg, paddingBottom: spacing.md },
   headerBtns: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   newBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: c.brandPrimary, alignItems: "center", justifyContent: "center" },
+  badge: { position: "absolute", top: -6, right: -8, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: c.error, alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
+  badgeText: { color: "#fff", fontFamily: font.text, fontWeight: "700", fontSize: 10 },
   postHead: { flexDirection: "row", alignItems: "center", gap: spacing.md },
   avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: c.surfaceTertiary, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   avatarImg: { width: 40, height: 40 },

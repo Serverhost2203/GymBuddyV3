@@ -26,6 +26,13 @@ Build a complete, production-ready Android fitness app "GymBuddy" (React Native/
 
 ## Implemented (2026-06)
 
+### Update 9 — Friends, requests, notifications, per-post & profile visibility
+- Friendships (collection `friendships`): send request, accept/decline, unfriend, status (none/outgoing/incoming/friends). Reverse-pending auto-accepts. Endpoints: /friends/request, /friends/{id}/accept, /friends/{id}/decline, DELETE /friends/{uid}, /friends, /friends/requests, /friends/status/{uid}.
+- In-app notifications (collection `notifications`): friend_request + friend_accept, with unread badge on feed bell. /notifications, /notifications/unread_count, /notifications/read. New screen /app/frontend/app/notifications.tsx with inline accept/decline.
+- Post visibility public|friends|private (PostIn._norm_vis). Feed scope toggle Public|Friends (GET /feed?scope=). Composer 3-way visibility segmented. get_post enforces friends/private.
+- Profile visibility public|friends|private (privacy.profile_visibility, kept in sync with profile_public). Friends see public+friends posts/photos; friends-only/private profiles 403 for non-friends. Settings uses 3-way segmented. Add-friend button on profile (incl. private profiles — searchable by name now).
+- users/search now returns all users by name (for friend requests). purge_user_data also clears friendships + notifications.
+
 ### Update 8 — Security audit remediation
 - SEC-001 (Critical): removed source-default secrets — JWT_SECRET/ROOT_ADMIN_EMAIL/ROOT_ADMIN_PASSWORD now required env (fail-closed); rotated ROOT_ADMIN_PASSWORD in .env and rotated the admin@gymbuddy.app test account off the old public default.
 - SEC-002 (Medium): promote-to-admin is now root-only (require_root), matching demote.

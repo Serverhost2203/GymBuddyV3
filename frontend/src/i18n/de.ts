@@ -117,7 +117,7 @@ export const de: Dict = {
     subscription: "Abo", exportData: "Meine Daten exportieren", deleteAccount: "Konto löschen",
     deleteConfirm: "Konto dauerhaft löschen? Dies kann nicht rückgängig gemacht werden.",
     admin: "Admin-Bereich", account: "Konto", equipmentDays: "Equipment & Tage",
-    profilePublic: "Öffentliches Profil", shareWorkouts: "Workouts teilen",
+    profilePublic: "Öffentliches Profil", shareWorkouts: "Workouts teilen", profileVisibility: "Profil-Sichtbarkeit", friendsOnly: "Freunde",
     notifyWorkouts: "Trainingserinnerungen", notifyWeight: "Gewichts-Check-ins",
     notifyMeasurements: "Mess-Erinnerungen", notifyStreak: "Serien-Erinnerungen",
     free: "Kostenlos", premium: "Premium", upgradeToPremium: "Auf Premium upgraden",
@@ -161,6 +161,14 @@ export const de: Dict = {
     viewProfile: "Profil ansehen", workouts: "Workouts", deletePost: "Beitrag löschen", makePublicHint: "Stelle dein Profil öffentlich, um in Suche & Feed zu erscheinen",
     editComment: "Kommentar bearbeiten", deleteComment: "Kommentar löschen", deleteCommentConfirm: "Diesen Kommentar wirklich löschen?", edited: "bearbeitet",
     explore: "Entdecken", exploreEmpty: "Noch keine Fotos zum Entdecken. Sei die/der Erste und teile ein Foto!", people: "Personen", posts: "Beiträge",
+    scopePublic: "Öffentlich", scopeFriends: "Freunde", postVisibility: "Wer darf das sehen?",
+  },
+  friends: {
+    addFriend: "Freund hinzufügen", requestSent: "Anfrage gesendet", pending: "Ausstehend", accept: "Annehmen", decline: "Ablehnen",
+    friends: "Befreundet", friendsList: "Freunde", requests: "Anfragen",
+  },
+  notifications: {
+    title: "Benachrichtigungen", empty: "Keine Benachrichtigungen.", sentRequest: "hat dir eine Freundschaftsanfrage gesendet.", acceptedRequest: "hat deine Freundschaftsanfrage angenommen.",
   },
   gallery: {
     title: "Galerie", empty: "Noch keine Fotos.", add: "Foto hinzufügen", public: "Öffentlich", private: "Privat",

@@ -10,7 +10,7 @@ import { Modal, Pressable, ScrollView, Switch, Text, TextInput, View } from "rea
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { api } from "@/src/api";
-import { Body, Button, Card, Display, useToast } from "@/src/components/ui";
+import { Body, Button, Card, Display, Segmented, useToast } from "@/src/components/ui";
 import { syncReminders } from "@/src/notifications";
 import { useApp } from "@/src/context";
 import { LANGUAGES, type Lang } from "@/src/i18n";
@@ -174,14 +174,19 @@ export default function Profile() {
 
         {/* Privacy */}
         <Text style={s.section}>{t.profile.privacy}</Text>
-        <Card style={{ gap: spacing.xs }}>
-          {[["profile_public", t.profile.profilePublic], ["share_workouts", t.profile.shareWorkouts]].map(([k, label]) => (
-            <View key={k} style={s.row}>
-              <Text style={s.rowLabel}>{label}</Text>
-              <Switch value={!!user?.privacy?.[k]} onValueChange={(v) => togglePrivacy(k, v)} testID={`privacy-${k}`}
-                trackColor={{ true: colors.brandPrimary, false: colors.surfaceTertiary }} thumbColor={colors.onBrandPrimary} />
-            </View>
-          ))}
+        <Card style={{ gap: spacing.sm }}>
+          <Text style={s.rowLabel}>{t.profile.profileVisibility}</Text>
+          <Segmented
+            value={user?.privacy?.profile_visibility ?? (user?.privacy?.profile_public ? "public" : "private")}
+            onChange={(v) => patch({ privacy: { ...user?.privacy, profile_visibility: v } })}
+            testID="privacy-visibility"
+            options={[{ key: "public", label: t.gallery.public }, { key: "friends", label: t.profile.friendsOnly }, { key: "private", label: t.gallery.private }]}
+          />
+          <View style={s.row}>
+            <Text style={s.rowLabel}>{t.profile.shareWorkouts}</Text>
+            <Switch value={!!user?.privacy?.share_workouts} onValueChange={(v) => togglePrivacy("share_workouts", v)} testID="privacy-share_workouts"
+              trackColor={{ true: colors.brandPrimary, false: colors.surfaceTertiary }} thumbColor={colors.onBrandPrimary} />
+          </View>
         </Card>
 
         {/* Subscription */}

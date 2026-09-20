@@ -115,7 +115,7 @@ export const en = {
     subscription: "Subscription", exportData: "Export my data", deleteAccount: "Delete account",
     deleteConfirm: "Permanently delete your account? This cannot be undone.",
     admin: "Admin Dashboard", account: "Account", equipmentDays: "Equipment & Days",
-    profilePublic: "Public profile", shareWorkouts: "Share workouts",
+    profilePublic: "Public profile", shareWorkouts: "Share workouts", profileVisibility: "Profile visibility", friendsOnly: "Friends",
     notifyWorkouts: "Workout reminders", notifyWeight: "Weight check-ins",
     notifyMeasurements: "Measurement reminders", notifyStreak: "Streak reminders",
     free: "Free", premium: "Premium", upgradeToPremium: "Upgrade to Premium",
@@ -159,6 +159,14 @@ export const en = {
     viewProfile: "View profile", workouts: "Workouts", deletePost: "Delete post", makePublicHint: "Set your profile public to appear in search & feed",
     editComment: "Edit comment", deleteComment: "Delete comment", deleteCommentConfirm: "Really delete this comment?", edited: "edited",
     explore: "Explore", exploreEmpty: "No photos to explore yet. Be the first to share one!", people: "People", posts: "Posts",
+    scopePublic: "Public", scopeFriends: "Friends", postVisibility: "Who can see this?",
+  },
+  friends: {
+    addFriend: "Add friend", requestSent: "Request sent", pending: "Pending", accept: "Accept", decline: "Decline",
+    friends: "Friends", friendsList: "Friends", requests: "Requests",
+  },
+  notifications: {
+    title: "Notifications", empty: "No notifications.", sentRequest: "sent you a friend request.", acceptedRequest: "accepted your friend request.",
   },
   gallery: {
     title: "Gallery", empty: "No photos yet.", add: "Add Photo", public: "Public", private: "Private",
